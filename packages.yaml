@@ -1,0 +1,194 @@
+version: 1
+
+groups:
+  - id: dev-tools
+    name: Ferramentas de Desenvolvimento
+  - id: editors
+    name: Editores
+  - id: runtimes
+    name: Runtimes
+
+apps:
+  - id: fish
+    name: Fish Shell
+    group: shell
+    description: Shell interativo moderno com autocompletar e syntax highlighting
+    check:
+      default:
+        - command -v fish
+    actions:
+      install:
+        fedora:
+          - sudo dnf install fish -y
+          - chsh -s $(which fish)
+      update:
+        fedora:
+          - sudo dnf upgrade -y fish
+      uninstall:
+        fedora:
+          - sudo dnf remove -y fish
+  - id: git
+    name: Git
+    group: dev-tools
+    description: Ferramenta de versionamento
+    check:
+      default:
+        - command -v git
+      windows:
+        - where git
+    actions:
+      install:
+        ubuntu:
+          - sudo apt-get update
+          - sudo apt-get install -y git
+        # fedora:
+        #   - sudo dnf install -y git
+        macos:
+          - brew install git
+        windows:
+          - winget install --id Git.Git -e --source winget
+      update:
+        ubuntu:
+          - sudo apt-get install --only-upgrade -y git
+        fedora:
+          - sudo dnf upgrade -y git
+        macos:
+          - brew upgrade git
+        windows:
+          - winget upgrade --id Git.Git -e
+      uninstall:
+        ubuntu:
+          - sudo apt-get remove -y git
+        fedora:
+          - sudo dnf remove -y git
+        macos:
+          - brew uninstall git
+        windows:
+          - winget uninstall --id Git.Git -e
+
+  - id: vscode
+    name: VS Code
+    group: editors
+    description: Editor de codigo
+    check:
+      default:
+        - command -v code
+      windows:
+        - where code
+    actions:
+      install:
+        ubuntu:
+          - sudo snap install code --classic
+        fedora:
+          - sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
+          - sudo sh -c 'printf "[code]\nname=Visual Studio Code\nbaseurl=https://packages.microsoft.com/yumrepos/vscode\nenabled=1\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc\n" > /etc/yum.repos.d/vscode.repo'
+          - sudo dnf install -y code
+        macos:
+          - brew install --cask visual-studio-code
+        windows:
+          - winget install --id Microsoft.VisualStudioCode -e --source winget
+      update:
+        ubuntu:
+          - sudo snap refresh code
+        fedora:
+          - sudo dnf upgrade -y code
+        macos:
+          - brew upgrade --cask visual-studio-code
+        windows:
+          - winget upgrade --id Microsoft.VisualStudioCode -e
+      uninstall:
+        ubuntu:
+          - sudo snap remove code
+        fedora:
+          - sudo dnf remove -y code
+        macos:
+          - brew uninstall --cask visual-studio-code
+        windows:
+          - winget uninstall --id Microsoft.VisualStudioCode -e
+
+  - id: kernel-headers
+    name: Kernel Headers
+    group: dev-tools
+    description: Cabecalhos do kernel Linux (requer reboot)
+    reboot_on:
+      install: true
+      update: true
+    check:
+      default:
+        - test -d /usr/src/linux-headers-$(uname -r)
+    actions:
+      install:
+        ubuntu:
+          - sudo apt-get update
+          - sudo apt-get install -y linux-headers-$(uname -r)
+        fedora:
+          - sudo dnf install -y kernel-devel kernel-headers
+      update:
+        ubuntu:
+          - sudo apt-get install --only-upgrade -y linux-headers-$(uname -r)
+        fedora:
+          - sudo dnf upgrade -y kernel-devel kernel-headers
+      uninstall:
+        ubuntu:
+          - sudo apt-get remove -y linux-headers-$(uname -r)
+        fedora:
+          - sudo dnf remove -y kernel-devel kernel-headers
+
+  - id: nodejs
+    name: Node.js
+    group: runtimes
+    description: Runtime JavaScript
+    check:
+      default:
+        - command -v node
+      windows:
+        - where node
+    actions:
+      install:
+        ubuntu:
+          - sudo apt-get update
+          - sudo apt-get install -y nodejs npm
+        fedora:
+          - sudo dnf install -y nodejs npm
+        macos:
+          - brew install node
+        windows:
+          - winget install --id OpenJS.NodeJS -e --source winget
+      update:
+        ubuntu:
+          - sudo apt-get install --only-upgrade -y nodejs npm
+        fedora:
+          - sudo dnf upgrade -y nodejs npm
+        macos:
+          - brew upgrade node
+        windows:
+          - winget upgrade --id OpenJS.NodeJS -e
+      uninstall:
+        ubuntu:
+          - sudo apt-get remove -y nodejs npm
+        fedora:
+          - sudo dnf remove -y nodejs npm
+        macos:
+          - brew uninstall node
+        windows:
+          - winget uninstall --id OpenJS.NodeJS -e
+
+  - id: nvm
+    name: NVM
+    group: runtimes
+    description: Node Version Manager
+    depends_on:
+      - git
+    check:
+      default:
+        - test -d "$HOME/.nvm"
+    actions:
+      install:
+        default:
+          - curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
+      update:
+        default:
+          - curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
+      uninstall:
+        default:
+          - rm -rf "$HOME/.nvm"
