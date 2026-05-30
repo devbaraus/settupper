@@ -34,14 +34,14 @@ fn render_header(frame: &mut Frame, state: &AppState, area: Rect) {
     let text = format!("{}{}{}", title, mode,  busy);
 
     let header = Paragraph::new(text)
-        .style(Style::default().bg(Color::Blue).fg(Color::White).bold());
+        .style(Style::default().fg(Color::White).bg(Color::Blue));
     frame.render_widget(header, area);
 }
 
 fn render_footer(frame: &mut Frame, area: Rect) {
     let keys = " q:sair  i:instalar  u:atualizar  d:desinstalar  a:smart  A:smart-all  r:refresh  space:selecionar  esc:limpar  e:exportar";
     let footer = Paragraph::new(keys)
-        .style(Style::default().bg(Color::DarkGray).fg(Color::White));
+        .style(Style::default().fg(Color::White).bg(Color::Blue));
     frame.render_widget(footer, area);
 }
 
@@ -84,7 +84,7 @@ fn render_left_pane(frame: &mut Frame, state: &AppState, area: Rect) {
             Constraint::Length(group_h),
             Constraint::Length(1), // summary
             Constraint::Min(0),    // table
-            Constraint::Length(button_h), // buttons
+            // Constraint::Length(button_h), // buttons
         ])
         .split(area);
 
@@ -93,7 +93,7 @@ fn render_left_pane(frame: &mut Frame, state: &AppState, area: Rect) {
     }
     render_summary(frame, state, chunks[1]);
     render_table(frame, state, chunks[2]);
-    render_buttons(frame, state, chunks[3]);
+    // render_buttons(frame, state, chunks[3]);
 }
 
 fn render_group_filter(frame: &mut Frame, state: &AppState, area: Rect) {
@@ -224,7 +224,7 @@ fn render_buttons(frame: &mut Frame, state: &AppState, area: Rect) {
 
     let line = Line::from(vec![
         Span::styled(
-            if busy { " [i]stalar " } else { " [i]nstalar " },
+            " [i]nstalar ",
             if busy { style_dim } else { style_active },
         ),
         Span::raw(" "),
