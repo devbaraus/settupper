@@ -1,13 +1,13 @@
 use ratatui::{
     Frame,
-    layout::{Constraint, Direction, Layout, Rect, Alignment},
-    style::{Color, Modifier, Style, Stylize},
+    layout::{Constraint, Direction, Layout, Rect},
+    style::{Color, Style, Stylize},
     text::{Line, Span, Text},
-    widgets::{Block, Borders, Cell, Paragraph, Row, Table, TableState, Wrap, List, ListItem, ListState},
+    widgets::{Block, Borders, Cell, Paragraph, Row, Table, TableState, Wrap},
 };
 use crate::app::AppState;
-use crate::core::{select_commands, AppStatus};
-use super::helpers::{checkbox, status_label, smart_action_label};
+use crate::core::select_commands;
+use super::helpers::{status_label, smart_action_label};
 
 pub fn render(frame: &mut Frame, state: &AppState) {
     let area = frame.area();
@@ -31,7 +31,7 @@ fn render_header(frame: &mut Frame, state: &AppState, area: Rect) {
     let title = format!(" Settupper — {} ", state.distro.as_str());
     let mode = if state.dry_run { " [DRY-RUN]" } else { "" };
     let busy = if state.busy { " ⟳" } else { "" };
-    let text = format!("{}{}{}", title, mode, busy);
+    let text = format!("{}{}{}", title, mode,  busy);
 
     let header = Paragraph::new(text)
         .style(Style::default().bg(Color::Blue).fg(Color::White).bold());
@@ -298,7 +298,7 @@ fn render_details(frame: &mut Frame, state: &AppState, area: Rect) {
         app.depends_on.join(", ")
     };
 
-    let smart = if let Some(s) = status {
+    let smart = if status.is_some() {
         smart_action_label(state, real_idx)
     } else {
         "..."
@@ -368,10 +368,6 @@ fn render_details(frame: &mut Frame, state: &AppState, area: Rect) {
         Line::from(vec![
             Span::styled("Ação smart: ", Style::default().bold()),
             Span::raw(smart),
-        ]),
-        Line::from(vec![
-            Span::styled("Senha sudo: ", Style::default().bold()),
-            Span::raw(if state.sudo_password.is_some() { "sim" } else { "não" }),
         ]),
     ];
 

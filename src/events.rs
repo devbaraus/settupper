@@ -1,13 +1,11 @@
-use crossterm::event::{self, Event, KeyCode, KeyModifiers};
+use crossterm::event::{self, KeyCode};
 use crate::app::{Action, ActionPlan, AppEvent, AppState, Screen};
-use crate::core::{select_commands, topological_sort};
+use crate::core::{select_commands, topological_sort, CommandGroup};
 use crate::workers;
-use std::time::Duration;
 
 pub fn handle_key_event(state: &mut AppState, key: event::KeyEvent) -> bool {
     // Handle modal screens first
     match &state.screen.clone() {
-        Screen::SudoPassword => return handle_sudo_input(state, key),
         Screen::RebootRequired { .. } => {
             if matches!(key.code, KeyCode::Enter | KeyCode::Esc) {
                 state.screen = Screen::Main;
@@ -48,30 +46,6 @@ pub fn handle_key_event(state: &mut AppState, key: event::KeyEvent) -> bool {
         _ => {}
     }
 
-    false
-}
-
-fn handle_sudo_input(state: &mut AppState, key: event::KeyEvent) -> bool {
-    match key.code {
-        KeyCode::Esc => {
-            state.screen = Screen::Main;
-            state.sudo_input.clear();
-            state.pending_plans.clear();
-        }
-        KeyCode::Enter => {
-            let password = state.sudo_input.clone();
-            state.sudo_input.clear();
-            state.screen = Screen::Main;
-            workers::spawn_validate_password(password, state.event_tx.clone());
-        }
-        KeyCode::Backspace => {
-            state.sudo_input.pop();
-        }
-        KeyCode::Char(c) => {
-            state.sudo_input.push(c);
-        }
-        _ => {}
-    }
     false
 }
 
@@ -124,7 +98,7 @@ fn queue_action(state: &mut AppState, action: Action) {
         return;
     }
 
-    start_execution(state, plans);
+    launch_plans(state, plans);
 }
 
 fn queue_action_smart(state: &mut AppState) {
@@ -142,7 +116,7 @@ fn queue_action_smart(state: &mut AppState) {
         return;
     }
 
-    start_execution(state, plans);
+    launch_plans(state, plans);
 }
 
 fn queue_action_smart_all(state: &mut AppState) {
@@ -163,46 +137,45 @@ fn queue_action_smart_all(state: &mut AppState) {
         return;
     }
 
-    start_execution(state, plans);
-}
-
-fn start_execution(state: &mut AppState, plans: Vec<ActionPlan>) {
-    let needs_sudo = {
-        use crate::core::{command_requires_sudo, select_commands};
-        plans.iter().any(|plan| {
-            let Some(s) = state.statuses.get(plan.app_index) else { return false };
-            let map = match plan.action {
-                Action::Install => &s.app.install,
-                Action::Update => &s.app.update,
-                Action::Uninstall => &s.app.uninstall,
-            };
-            if let Some(cmds) = select_commands(map, &state.distro) {
-                command_requires_sudo(cmds)
-            } else {
-                false
-            }
-        })
-    };
-
-    if needs_sudo && state.sudo_password.is_none() {
-        state.pending_plans = plans;
-        state.screen = Screen::SudoPassword;
-        return;
-    }
-
     launch_plans(state, plans);
 }
 
+
+
 pub fn launch_plans(state: &mut AppState, plans: Vec<ActionPlan>) {
+    // Build CommandGroups — one per plan, group_id = app_index for result correlation.
+    let groups: Vec<CommandGroup> = plans
+        .iter()
+        .filter_map(|plan| {
+            let status = state.statuses.get(plan.app_index)?;
+            let map = match plan.action {
+                Action::Install => &status.app.install,
+                Action::Update => &status.app.update,
+                Action::Uninstall => &status.app.uninstall,
+            };
+            let commands = select_commands(map, &state.distro)?.clone();
+            Some(CommandGroup {
+                group_id: plan.app_index,
+                label: format!("{} ({})", status.app.name, plan.action.as_str()),
+                commands,
+            })
+        })
+        .collect();
+
+    if groups.is_empty() {
+        state.push_log("# Nenhum comando para executar.".to_string());
+        return;
+    }
+
     state.busy = true;
     state.cancel.store(false, std::sync::atomic::Ordering::Relaxed);
     let cancel = state.cancel.clone();
 
     workers::spawn_execute_plans(
+        groups,
         plans,
         state.statuses.clone(),
         state.distro.clone(),
-        state.sudo_password.clone(),
         state.dry_run,
         cancel,
         state.event_tx.clone(),
@@ -306,16 +279,6 @@ pub fn handle_app_event(state: &mut AppState, event: AppEvent) {
         AppEvent::AllPlansFinished => {
             state.busy = false;
             state.push_log("# Concluído".to_string());
-            state.pending_plans.clear();
-        }
-        AppEvent::PasswordValidated => {
-            let password = state.sudo_input.clone();
-            state.sudo_password = Some(password);
-            let plans = std::mem::take(&mut state.pending_plans);
-            launch_plans(state, plans);
-        }
-        AppEvent::PasswordRejected => {
-            state.push_log("# Senha incorreta".to_string());
             state.pending_plans.clear();
         }
         AppEvent::Error(msg) => {

@@ -1,11 +1,6 @@
-use ratatui::{
-    layout::Rect,
-    style::{Color, Modifier, Style},
-    text::{Line, Span},
-};
+use ratatui::{layout::Rect, style::Color};
 use crate::core::AppStatus;
 use crate::app::{Action, AppState};
-use crate::core::select_commands;
 
 pub struct StatusLabel {
     pub text: &'static str,
@@ -51,8 +46,4 @@ pub fn smart_action_label(state: &AppState, idx: usize) -> &'static str {
         Some(Action::Update) => "update",
         _ => "nenhuma",
     }
-}
-
-pub fn checkbox(selected: bool) -> &'static str {
-    if selected { "☑" } else { "○" }
 }

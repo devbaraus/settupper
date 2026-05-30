@@ -1,5 +1,5 @@
 use crate::config::PackageConfig;
-use crate::core::{AppStatus, Distro, CommandGroup};
+use crate::core::{AppStatus, Distro};
 use std::collections::HashSet;
 use std::sync::Arc;
 use tokio::sync::mpsc;
@@ -30,9 +30,7 @@ pub struct ActionPlan {
 #[derive(Debug, Clone, PartialEq)]
 pub enum Screen {
     Main,
-    SudoPassword,
     RebootRequired { app_name: String, pending: Vec<String> },
-    Confirm { message: String },
 }
 
 #[derive(Debug)]
@@ -41,8 +39,6 @@ pub enum AppEvent {
     CommandOutput(String),
     ActionFinished { index: usize, success: bool, reboot: bool },
     AllPlansFinished,
-    PasswordValidated,
-    PasswordRejected,
     Error(String),
 }
 
@@ -63,9 +59,6 @@ pub struct AppState {
     pub screen: Screen,
     pub busy: bool,
 
-    pub sudo_password: Option<String>,
-    pub sudo_input: String,
-
     pub log_lines: Vec<String>,
     pub detail_scroll: u16,
 
@@ -75,8 +68,6 @@ pub struct AppState {
     pub event_rx: mpsc::UnboundedReceiver<AppEvent>,
 
     pub cancel: Arc<std::sync::atomic::AtomicBool>,
-    pub group_cursor: usize,
-    pub show_group_dropdown: bool,
 }
 
 impl AppState {
@@ -96,16 +87,12 @@ impl AppState {
             split_ratio: 0.55,
             screen: Screen::Main,
             busy: false,
-            sudo_password: None,
-            sudo_input: String::new(),
             log_lines: Vec::new(),
             detail_scroll: 0,
             pending_plans: Vec::new(),
             event_tx,
             event_rx,
             cancel: Arc::new(std::sync::atomic::AtomicBool::new(false)),
-            group_cursor: 0,
-            show_group_dropdown: false,
         }
     }
 
@@ -194,23 +181,5 @@ impl AppState {
         if self.log_lines.len() > 500 {
             self.log_lines.remove(0);
         }
-    }
-
-    pub fn needs_sudo_for_plans(&self) -> bool {
-        use crate::core::{command_requires_sudo, select_commands};
-        for plan in &self.pending_plans {
-            let Some(status) = self.statuses.get(plan.app_index) else { continue };
-            let map = match plan.action {
-                Action::Install => &status.app.install,
-                Action::Update => &status.app.update,
-                Action::Uninstall => &status.app.uninstall,
-            };
-            if let Some(cmds) = select_commands(map, &self.distro) {
-                if command_requires_sudo(cmds) {
-                    return true;
-                }
-            }
-        }
-        false
     }
 }
