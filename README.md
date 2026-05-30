@@ -4,7 +4,7 @@
 
 Settupper é uma aplicação de terminal (TUI) que lê um arquivo `YAML` ou `JSON` com a lista de programas que você precisa, verifica o que já está instalado e executa install, update ou uninstall com um clique — sem lembrar de comandos específicos de cada distro ou sistema operacional.
 
-![Preview](https://github.com/devbaraus/settupper/assets/image.png)
+![Preview](https://github.com/devbaraus/settupper/blob/main/assets/image.png)
 
 ---
 
