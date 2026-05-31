@@ -80,8 +80,10 @@ async fn run_loop(
         // Poll for key events (16ms ≈ 60fps)
         if event::poll(Duration::from_millis(16))? {
             if let Event::Key(key) = event::read()? {
-                if events::handle_key_event(state, key) {
-                    break; // quit
+                if key.kind != event::KeyEventKind::Release {
+                    if events::handle_key_event(state, key) {
+                        break; // quit
+                    }
                 }
             }
         }

@@ -165,9 +165,6 @@ fn run_command_windows(
     })
 }
 
-// Wraps every `sudo` token after a shell operator with `-S -p ''` for stdin password injection.
-
-
 pub fn strip_ansi(s: &str) -> String {
     let stripped = strip_ansi_escapes::strip(s.as_bytes());
     String::from_utf8_lossy(&stripped).into_owned()
@@ -351,6 +348,9 @@ const KNOWN_TERMINALS: &[&str] = &[
     "kgx",
     "xterm",
     "x-terminal-emulator",
+    "cmd",
+    "powershell",
+    "git-bash"
 ];
 
 fn build_launcher_argv(exe: &str, script: &str, name: &str) -> Vec<String> {
@@ -371,6 +371,7 @@ fn build_launcher_argv(exe: &str, script: &str, name: &str) -> Vec<String> {
             "bash".to_string(),
             script.to_string(),
         ],
+        "cmd" | "powershell" => vec![exe.to_string(), "-e".to_string(), script.to_string()],
         _ => vec![exe.to_string(), "-e".to_string(), "bash".to_string(), script.to_string()],
     }
 }
@@ -457,7 +458,7 @@ pub fn run_groups_in_terminal(
         Some(a) => a,
         None => {
             result.error =
-                "Nenhum emulador de terminal encontrado. Use --inline ou defina $SETTUPPER_TERMINAL."
+                "Nenhum emulador de terminal encontrado."
                     .to_string();
             let _ = std::fs::remove_dir_all(&tmp_dir);
             return result;
