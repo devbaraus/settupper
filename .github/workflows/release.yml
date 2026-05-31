@@ -1,15 +1,17 @@
 name: Release
 
+permissions:
+  contents: write
+
 on:
   release:
-    types: [published, edited]
+    types: [published]
 
 jobs:
   build:
     name: Build — ${{ matrix.target }}
+    if: github.event.release.prerelease == false
     runs-on: ${{ matrix.os }}
-    permissions:
-      contents: write
     strategy:
       fail-fast: false
       matrix:
