@@ -277,7 +277,7 @@ pub struct CommandGroup {
     pub commands: Vec<String>,
 }
 
-pub fn build_terminal_script(groups: &[CommandGroup], result_path: &str, done_path: &str) -> String {
+pub fn build_terminal_script_bash(groups: &[CommandGroup], result_path: &str, done_path: &str) -> String {
     let mut lines = vec![
         "#!/usr/bin/env bash".to_string(),
         "set -u".to_string(),
@@ -320,6 +320,50 @@ pub fn build_terminal_script(groups: &[CommandGroup], result_path: &str, done_pa
     lines.join("\n")
 }
 
+pub fn build_terminal_script_bat(groups: &[CommandGroup], result_path: &str, done_path: &str) -> String {
+    let mut lines = vec![
+        "@echo off".to_string(),
+        "chcp 65001 > nul".to_string(),
+        format!("set RESULT={}", result_path),
+        format!("set DONE={}", done_path),
+        "type nul > \"%RESULT%\"".to_string(),
+        String::new(),
+    ];
+
+    for group in groups {
+        lines.push("echo.".to_string());
+        lines.push(format!(
+            "echo \u{001b}[1;36m==> {}\u{001b}[0m",
+            group.label
+        ));
+
+        let chained = group
+            .commands
+            .iter()
+            .map(|cmd| format!("call {}", cmd))
+            .collect::<Vec<String>>()
+            .join(" && ");
+
+        lines.push("set rc=0".to_string());
+        lines.push(format!("{} || (set rc=%ERRORLEVEL%)", chained));
+        lines.push(format!("(echo {}\t%rc%)>>\"%RESULT%\"", group.group_id));
+
+        lines.push("if %rc% neq 0 (".to_string());
+        lines.push("  echo \u{001b}[1;31m[falhou] rc=%rc%\u{001b}[0m".to_string());
+        lines.push(") else (".to_string());
+        lines.push("  echo \u{001b}[1;32m[ok]\u{001b}[0m".to_string());
+        lines.push(")".to_string());
+        lines.push(String::new());
+    }
+
+    lines.push("type nul > \"%DONE%\"".to_string());
+    lines.push("echo.".to_string());
+    lines.push("echo \u{001b}[1mConcluido. Pressione ENTER para fechar...\u{001b}[0m".to_string());
+    lines.push("set /p _=".to_string());
+
+    lines.join("\r\n")
+}
+
 fn shell_quote(s: &str) -> String {
     format!("'{}'", s.replace('\'', "'\\''"))
 }
@@ -348,6 +392,7 @@ const KNOWN_TERMINALS: &[&str] = &[
     "kgx",
     "xterm",
     "x-terminal-emulator",
+    "wt",
     "cmd",
     "powershell",
     "git-bash"
@@ -371,37 +416,65 @@ fn build_launcher_argv(exe: &str, script: &str, name: &str) -> Vec<String> {
             "bash".to_string(),
             script.to_string(),
         ],
-        "cmd" | "powershell" => vec![exe.to_string(), "-e".to_string(), script.to_string()],
+        "wt" => {
+            vec![
+                exe.to_string(),
+                "-w".to_string(),
+                "cmd.exe".to_string(),
+                "/C".to_string(),
+                script.to_string(),
+            ]
+        }
+        "cmd" => {
+            vec![
+                exe.to_string(),
+                "/C".to_string(),
+                "start".to_string(),
+                "".to_string(),
+                "/wait".to_string(),
+                "cmd.exe".to_string(),
+                "/C".to_string(),
+                script.to_string(),
+            ]
+        }
+        "powershell" => {
+            vec![
+                exe.to_string(),
+                "-Command".to_string(),
+                format!("Start-Process cmd.exe -ArgumentList '/C', '{}' -Wait", script),
+            ]
+        }
         _ => vec![exe.to_string(), "-e".to_string(), "bash".to_string(), script.to_string()],
     }
 }
 
 fn find_in_path(name: &str) -> Option<std::path::PathBuf> {
     let path = std::env::var_os("PATH")?;
+    let name_with_ext = if cfg!(target_os = "windows") && !name.ends_with(".exe") {
+        format!("{}.exe", name)
+    } else {
+        name.to_string()
+    };
     std::env::split_paths(&path).find_map(|dir| {
-        let full = dir.join(name);
+        let full = dir.join(&name_with_ext);
         if full.is_file() { Some(full) } else { None }
     })
 }
 
-pub fn find_terminal_command(script_path: &str) -> Option<Vec<String>> {
+pub fn find_terminal_exe() -> Option<(String, String)> {
     for env_var in &["SETTUPPER_TERMINAL", "TERMINAL"] {
         if let Ok(terminal) = std::env::var(env_var) {
-            if !terminal.is_empty() && find_in_path(&terminal).is_some() {
-                return Some(vec![
-                    terminal,
-                    "-e".to_string(),
-                    "bash".to_string(),
-                    script_path.to_string(),
-                ]);
+            if !terminal.is_empty() {
+                if let Some(exe) = find_in_path(&terminal) {
+                    return Some((exe.to_string_lossy().into_owned(), terminal));
+                }
             }
         }
     }
 
     for &name in KNOWN_TERMINALS {
         if let Some(exe) = find_in_path(name) {
-            let exe_str = exe.to_string_lossy().into_owned();
-            return Some(build_launcher_argv(&exe_str, script_path, name));
+            return Some((exe.to_string_lossy().into_owned(), name.to_string()));
         }
     }
 
@@ -420,6 +493,16 @@ pub fn run_groups_in_terminal(
         return result;
     }
 
+    let (exe, term_name) = match find_terminal_exe() {
+        Some(t) => t,
+        None => {
+            result.error = "Nenhum emulador de terminal encontrado.".to_string();
+            return result;
+        }
+    };
+
+    let use_batch = cfg!(target_os = "windows") && term_name != "git-bash" && !term_name.contains("bash");
+
     let ts = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap_or_default()
@@ -431,15 +514,24 @@ pub fn run_groups_in_terminal(
         return result;
     }
 
-    let script_path = tmp_dir.join("run.sh");
+    let script_name = if use_batch { "run.bat" } else { "run.sh" };
+    let script_path = tmp_dir.join(script_name);
     let result_path = tmp_dir.join("result.tsv");
     let done_path = tmp_dir.join("done");
 
-    let script = build_terminal_script(
-        groups,
-        &result_path.to_string_lossy(),
-        &done_path.to_string_lossy(),
-    );
+    let script = if use_batch {
+        build_terminal_script_bat(
+            groups,
+            &result_path.to_string_lossy(),
+            &done_path.to_string_lossy(),
+        )
+    } else {
+        build_terminal_script_bash(
+            groups,
+            &result_path.to_string_lossy(),
+            &done_path.to_string_lossy(),
+        )
+    };
 
     if let Err(e) = std::fs::write(&script_path, script) {
         result.error = format!("Falha ao escrever script: {}", e);
@@ -447,31 +539,24 @@ pub fn run_groups_in_terminal(
         return result;
     }
 
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::PermissionsExt;
-        let _ = std::fs::set_permissions(&script_path, std::fs::Permissions::from_mode(0o755));
+    if !use_batch {
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let _ = std::fs::set_permissions(&script_path, std::fs::Permissions::from_mode(0o755));
+        }
     }
 
     let script_str = script_path.to_string_lossy().into_owned();
-    let argv = match find_terminal_command(&script_str) {
-        Some(a) => a,
-        None => {
-            result.error =
-                "Nenhum emulador de terminal encontrado."
-                    .to_string();
-            let _ = std::fs::remove_dir_all(&tmp_dir);
-            return result;
-        }
-    };
+    let argv = build_launcher_argv(&exe, &script_str, &term_name);
 
     result.terminal = argv[0].clone();
-    let term_name = std::path::Path::new(&argv[0])
+    let term_display_name = std::path::Path::new(&argv[0])
         .file_name()
         .unwrap_or_default()
         .to_string_lossy()
         .into_owned();
-    on_status(format!("Abrindo terminal externo ({})...", term_name));
+    on_status(format!("Abrindo terminal externo ({})...", term_display_name));
 
     let mut process = match std::process::Command::new(&argv[0]).args(&argv[1..]).spawn() {
         Ok(p) => p,
