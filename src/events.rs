@@ -287,3 +287,147 @@ pub fn handle_app_event(state: &mut AppState, event: AppEvent) {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::config::{AppConfig, PackageConfig};
+    use crate::core::{AppStatus, Distro};
+    use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+    use std::collections::HashMap;
+
+    fn app(id: &str) -> AppConfig {
+        AppConfig {
+            id: id.to_string(),
+            name: id.to_string(),
+            ..AppConfig::default()
+        }
+    }
+
+    fn state() -> AppState {
+        AppState::new(
+            PackageConfig {
+                version: 1,
+                apps: vec![app("one"), app("two")],
+                groups: vec![],
+            },
+            "packages.yaml".to_string(),
+            Distro::Ubuntu,
+            false,
+        )
+    }
+
+    fn status(app: AppConfig, supported: bool, installed: bool) -> AppStatus {
+        AppStatus {
+            app,
+            supported,
+            installed,
+            message: String::new(),
+        }
+    }
+
+    #[test]
+    fn handle_key_event_moves_selection_and_quits() {
+        let mut state = state();
+
+        assert!(!handle_key_event(
+            &mut state,
+            KeyEvent::new(KeyCode::Down, KeyModifiers::NONE)
+        ));
+        assert_eq!(state.table_cursor, 1);
+
+        assert!(!handle_key_event(
+            &mut state,
+            KeyEvent::new(KeyCode::Char(' '), KeyModifiers::NONE)
+        ));
+        assert!(state.selected_indices.contains(&1));
+
+        assert!(!handle_key_event(
+            &mut state,
+            KeyEvent::new(KeyCode::Esc, KeyModifiers::NONE)
+        ));
+        assert!(state.selected_indices.is_empty());
+
+        assert!(handle_key_event(
+            &mut state,
+            KeyEvent::new(KeyCode::Char('q'), KeyModifiers::NONE)
+        ));
+    }
+
+    #[test]
+    fn handle_key_event_closes_reboot_screen_on_enter() {
+        let mut state = state();
+        state.screen = Screen::RebootRequired {
+            app_name: "one".to_string(),
+            pending: vec!["two".to_string()],
+        };
+
+        let quit = handle_key_event(
+            &mut state,
+            KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE),
+        );
+
+        assert!(!quit);
+        assert_eq!(state.screen, Screen::Main);
+    }
+
+    #[test]
+    fn handle_app_event_loads_statuses_and_marks_idle() {
+        let mut state = state();
+        state.busy = true;
+        let statuses = vec![status(app("one"), true, false)];
+
+        handle_app_event(&mut state, AppEvent::StatusesLoaded(statuses));
+
+        assert!(!state.busy);
+        assert_eq!(state.statuses.len(), 1);
+        assert_eq!(state.log_lines.last(), Some(&"# Status atualizado".to_string()));
+    }
+
+    #[test]
+    fn handle_app_event_reboot_success_opens_modal_with_pending_apps() {
+        let mut state = state();
+        let mut install = HashMap::new();
+        install.insert("ubuntu".to_string(), vec!["install".to_string()]);
+        state.config.apps[0].install = install.clone();
+        state.config.apps[0].reboot_on.insert("install".to_string(), true);
+        state.config.apps[1].install = install;
+        state.statuses = state
+            .config
+            .apps
+            .iter()
+            .cloned()
+            .map(|app| status(app, true, false))
+            .collect();
+        state.pending_plans = vec![
+            ActionPlan { app_index: 0, action: Action::Install },
+            ActionPlan { app_index: 1, action: Action::Install },
+        ];
+
+        handle_app_event(
+            &mut state,
+            AppEvent::ActionFinished { index: 0, success: true, reboot: true },
+        );
+
+        assert_eq!(
+            state.screen,
+            Screen::RebootRequired {
+                app_name: "one".to_string(),
+                pending: vec!["one".to_string(), "two".to_string()],
+            }
+        );
+    }
+
+    #[test]
+    fn handle_app_event_all_plans_finished_clears_busy_and_pending() {
+        let mut state = state();
+        state.busy = true;
+        state.pending_plans = vec![ActionPlan { app_index: 0, action: Action::Install }];
+
+        handle_app_event(&mut state, AppEvent::AllPlansFinished);
+
+        assert!(!state.busy);
+        assert!(state.pending_plans.is_empty());
+        assert_eq!(state.log_lines.last(), Some(&"# Concluído".to_string()));
+    }
+}

@@ -183,3 +183,112 @@ impl AppState {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::config::{AppConfig, GroupConfig};
+    use std::collections::HashMap;
+
+    fn app(id: &str, group: &str) -> AppConfig {
+        AppConfig {
+            id: id.to_string(),
+            name: id.to_string(),
+            group: group.to_string(),
+            ..AppConfig::default()
+        }
+    }
+
+    fn state_with_apps(apps: Vec<AppConfig>) -> AppState {
+        AppState::new(
+            PackageConfig {
+                version: 1,
+                apps,
+                groups: vec![
+                    GroupConfig { id: "dev".to_string(), name: "Dev".to_string() },
+                    GroupConfig { id: "ops".to_string(), name: "Ops".to_string() },
+                ],
+            },
+            "packages.yaml".to_string(),
+            Distro::Ubuntu,
+            false,
+        )
+    }
+
+    #[test]
+    fn target_indices_uses_sorted_selection_before_cursor() {
+        let mut state = state_with_apps(vec![app("a", "dev"), app("b", "ops"), app("c", "dev")]);
+        state.table_cursor = 1;
+
+        assert_eq!(state.target_indices(), vec![1]);
+
+        state.selected_indices.insert(2);
+        state.selected_indices.insert(0);
+
+        assert_eq!(state.target_indices(), vec![0, 2]);
+    }
+
+    #[test]
+    fn apply_group_filter_updates_visible_rows_and_clears_selection() {
+        let mut state = state_with_apps(vec![app("a", "dev"), app("b", "ops"), app("c", "dev")]);
+        state.table_cursor = 2;
+        state.selected_indices.insert(1);
+
+        state.apply_group_filter("dev");
+
+        assert_eq!(state.active_group, "dev");
+        assert_eq!(state.visible_indices, vec![0, 2]);
+        assert_eq!(state.table_cursor, 0);
+        assert!(state.selected_indices.is_empty());
+
+        state.apply_group_filter("");
+
+        assert_eq!(state.visible_indices, vec![0, 1, 2]);
+    }
+
+    #[test]
+    fn smart_action_installs_missing_apps_and_updates_installed_apps() {
+        let mut install = HashMap::new();
+        install.insert("ubuntu".to_string(), vec!["install".to_string()]);
+        let mut update = HashMap::new();
+        update.insert("ubuntu".to_string(), vec!["update".to_string()]);
+
+        let mut state = state_with_apps(vec![app("missing", "dev"), app("installed", "dev")]);
+        let mut missing = state.config.apps[0].clone();
+        missing.install = install.clone();
+        let mut installed = state.config.apps[1].clone();
+        installed.install = install;
+        installed.update = update;
+
+        state.statuses = vec![
+            crate::core::AppStatus {
+                app: missing,
+                supported: true,
+                installed: false,
+                message: String::new(),
+            },
+            crate::core::AppStatus {
+                app: installed,
+                supported: true,
+                installed: true,
+                message: String::new(),
+            },
+        ];
+
+        assert_eq!(state.smart_action(0), Some(Action::Install));
+        assert_eq!(state.smart_action(1), Some(Action::Update));
+    }
+
+    #[test]
+    fn push_log_keeps_last_500_lines() {
+        let mut state = state_with_apps(vec![]);
+
+        for i in 0..505 {
+            state.push_log(format!("line {i}"));
+        }
+
+        assert_eq!(state.log_lines.len(), 500);
+        assert_eq!(state.log_lines.first(), Some(&"line 5".to_string()));
+        assert_eq!(state.log_lines.last(), Some(&"line 504".to_string()));
+    }
+}

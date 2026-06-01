@@ -229,3 +229,120 @@ pub fn find_default_config() -> Option<PathBuf> {
 
     None
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn write_temp_config(name: &str, content: &str) -> PathBuf {
+        let path = std::env::temp_dir().join(format!(
+            "settupper-{}-{}",
+            std::process::id(),
+            name
+        ));
+        std::fs::write(&path, content).expect("write temp config");
+        path
+    }
+
+    #[test]
+    fn load_yaml_config_parses_groups_and_nested_actions() {
+        let path = write_temp_config(
+            "nested-actions.yaml",
+            r#"
+version: 7
+groups:
+  - id: dev
+    name: Development
+apps:
+  - name: Git CLI
+    description: Version control
+    group: dev
+    depends_on:
+      - curl
+    reboot_on:
+      install: true
+      update: false
+    check:
+      installed:
+        - command -v git
+    actions:
+      install:
+        ubuntu:
+          - sudo apt install git
+        default:
+          - install git
+      update: brew upgrade git
+      uninstall:
+        all:
+          - remove git
+"#,
+        );
+
+        let config = load_config(&path).expect("valid config");
+        let _ = std::fs::remove_file(path);
+
+        assert_eq!(config.version, 7);
+        assert_eq!(config.groups[0].id, "dev");
+        assert_eq!(config.apps.len(), 1);
+
+        let app = &config.apps[0];
+        assert_eq!(app.id, "git-cli");
+        assert_eq!(app.name, "Git CLI");
+        assert_eq!(app.description, "Version control");
+        assert_eq!(app.depends_on, vec!["curl"]);
+        assert_eq!(app.reboot_on.get("install"), Some(&true));
+        assert_eq!(app.reboot_on.get("update"), Some(&false));
+        assert_eq!(app.check.get("default"), Some(&vec!["command -v git".to_string()]));
+        assert_eq!(app.install.get("ubuntu"), Some(&vec!["sudo apt install git".to_string()]));
+        assert_eq!(app.update.get("default"), Some(&vec!["brew upgrade git".to_string()]));
+        assert_eq!(app.uninstall.get("all"), Some(&vec!["remove git".to_string()]));
+    }
+
+    #[test]
+    fn load_json_config_accepts_top_level_action_sequence() {
+        let path = write_temp_config(
+            "top-level-actions.json",
+            r#"
+{
+  "apps": [
+    {
+      "id": "node",
+      "name": "Node",
+      "install": ["install node", "enable node"],
+      "check": "node --version"
+    }
+  ]
+}
+"#,
+        );
+
+        let config = load_config(&path).expect("valid json config");
+        let _ = std::fs::remove_file(path);
+
+        let app = &config.apps[0];
+        assert_eq!(config.version, 1);
+        assert_eq!(app.id, "node");
+        assert_eq!(
+            app.install.get("default"),
+            Some(&vec!["install node".to_string(), "enable node".to_string()])
+        );
+        assert_eq!(app.check.get("default"), Some(&vec!["node --version".to_string()]));
+    }
+
+    #[test]
+    fn load_config_rejects_app_without_name() {
+        let path = write_temp_config(
+            "missing-name.yaml",
+            r#"
+apps:
+  - id: bad
+    install: echo bad
+"#,
+        );
+
+        let err = load_config(&path).expect_err("missing name should fail");
+        let _ = std::fs::remove_file(path);
+
+        assert!(err.to_string().contains("Failed to parse app #0"));
+    }
+}

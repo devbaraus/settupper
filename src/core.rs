@@ -607,3 +607,137 @@ fn parse_result_file(path: &str) -> HashMap<usize, i32> {
     }
     codes
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::config::AppConfig;
+
+    fn app_status(id: &str, depends_on: Vec<&str>) -> AppStatus {
+        AppStatus {
+            app: AppConfig {
+                id: id.to_string(),
+                name: id.to_string(),
+                depends_on: depends_on.into_iter().map(String::from).collect(),
+                ..AppConfig::default()
+            },
+            supported: true,
+            installed: false,
+            message: String::new(),
+        }
+    }
+
+    #[test]
+    fn select_commands_prefers_distro_then_fallbacks() {
+        let mut commands = HashMap::new();
+        commands.insert("ubuntu".to_string(), vec!["apt install app".to_string()]);
+        commands.insert("default".to_string(), vec!["install default".to_string()]);
+        commands.insert("all".to_string(), vec!["install all".to_string()]);
+        commands.insert("*".to_string(), vec!["install star".to_string()]);
+
+        assert_eq!(
+            select_commands(&commands, &Distro::Ubuntu),
+            Some(&vec!["apt install app".to_string()])
+        );
+        assert_eq!(
+            select_commands(&commands, &Distro::Fedora),
+            Some(&vec!["install default".to_string()])
+        );
+
+        commands.remove("default");
+        assert_eq!(
+            select_commands(&commands, &Distro::Fedora),
+            Some(&vec!["install all".to_string()])
+        );
+
+        commands.remove("all");
+        assert_eq!(
+            select_commands(&commands, &Distro::Fedora),
+            Some(&vec!["install star".to_string()])
+        );
+    }
+
+    #[test]
+    fn resolve_status_marks_unsupported_apps_without_commands() {
+        let app = AppConfig {
+            id: "unsupported".to_string(),
+            name: "Unsupported".to_string(),
+            ..AppConfig::default()
+        };
+
+        let status = resolve_status(&app, &Distro::Ubuntu);
+
+        assert!(!status.supported);
+        assert!(!status.installed);
+        assert_eq!(status.message, "Sem comandos para ubuntu.");
+    }
+
+    #[test]
+    fn resolve_status_without_check_assumes_installable_app_is_not_installed() {
+        let mut install = HashMap::new();
+        install.insert("ubuntu".to_string(), vec!["install app".to_string()]);
+        let app = AppConfig {
+            id: "app".to_string(),
+            name: "App".to_string(),
+            install,
+            ..AppConfig::default()
+        };
+
+        let status = resolve_status(&app, &Distro::Ubuntu);
+
+        assert!(status.supported);
+        assert!(!status.installed);
+        assert!(status.message.is_empty());
+    }
+
+    #[test]
+    fn topological_sort_places_dependencies_before_dependents() {
+        let statuses = vec![
+            app_status("app", vec!["runtime", "tool"]),
+            app_status("tool", vec!["runtime"]),
+            app_status("runtime", vec![]),
+            app_status("unrelated", vec![]),
+        ];
+
+        let sorted = topological_sort(&statuses);
+        let pos = |idx| sorted.iter().position(|value| *value == idx).unwrap();
+
+        assert!(pos(2) < pos(1));
+        assert!(pos(1) < pos(0));
+        assert!(pos(2) < pos(0));
+        assert_eq!(sorted.len(), statuses.len());
+    }
+
+    #[test]
+    fn build_terminal_script_bash_quotes_paths_and_records_each_group() {
+        let groups = vec![CommandGroup {
+            group_id: 3,
+            label: "App's install".to_string(),
+            commands: vec!["echo first".to_string(), "echo second".to_string()],
+        }];
+
+        let script = build_terminal_script_bash(&groups, "/tmp/result's.tsv", "/tmp/done");
+
+        assert!(script.contains("RESULT='/tmp/result'\\''s.tsv'"));
+        assert!(script.contains("printf '\\n\\033[1;36m==> %s\\033[0m\\n' 'App'\\''s install'"));
+        assert!(script.contains("if echo first && \\\n  echo second; then rc=0; else rc=$?; fi"));
+        assert!(script.contains("printf '%s\\t%s\\n' 3 \"$rc\" >> \"$RESULT\""));
+        assert!(script.contains(": > \"$DONE\""));
+    }
+
+    #[test]
+    fn parse_result_file_ignores_malformed_rows() {
+        let path = std::env::temp_dir().join(format!(
+            "settupper-result-{}.tsv",
+            std::process::id()
+        ));
+        std::fs::write(&path, "1\t0\nbad\t2\n2\t42\n3\tbad\n").expect("write result file");
+
+        let codes = parse_result_file(&path.to_string_lossy());
+        let _ = std::fs::remove_file(path);
+
+        assert_eq!(codes.get(&1), Some(&0));
+        assert_eq!(codes.get(&2), Some(&42));
+        assert_eq!(codes.len(), 2);
+    }
+}
