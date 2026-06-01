@@ -28,7 +28,7 @@ pub fn render(frame: &mut Frame, state: &AppState) {
 }
 
 fn render_header(frame: &mut Frame, state: &AppState, area: Rect) {
-    let title = format!(" Settupper — {} ", state.distro.as_str());
+    let title = format!(" SETTUPPER — {} ", state.distro.as_str());
     let mode = if state.dry_run { " [DRY-RUN]" } else { "" };
     let busy = if state.busy { " ⟳" } else { "" };
     let text = format!("{}{}{}", title, mode,  busy);
@@ -39,7 +39,7 @@ fn render_header(frame: &mut Frame, state: &AppState, area: Rect) {
 }
 
 fn render_footer(frame: &mut Frame, area: Rect) {
-    let keys = " q:sair  i:instalar  u:atualizar  d:desinstalar  a:smart  A:smart-all  r:refresh  space:selecionar  esc:limpar  e:exportar";
+    let keys = " q:quit  i:install  u:update  d:uninstall  a:smart  A:smart-all  r:refresh  space:select  esc:clear  tab:group  ↑/↓:navigate";
     let footer = Paragraph::new(keys)
         .style(Style::default().fg(Color::White).bg(Color::Blue));
     frame.render_widget(footer, area);
@@ -93,13 +93,12 @@ fn render_left_pane(frame: &mut Frame, state: &AppState, area: Rect) {
     }
     render_summary(frame, state, chunks[1]);
     render_table(frame, state, chunks[2]);
-    // render_buttons(frame, state, chunks[3]);
 }
 
 fn render_group_filter(frame: &mut Frame, state: &AppState, area: Rect) {
     let groups = state.groups();
     let current = if state.active_group.is_empty() {
-        "Todos".to_string()
+        "All".to_string()
     } else {
         groups
             .iter()
@@ -108,7 +107,7 @@ fn render_group_filter(frame: &mut Frame, state: &AppState, area: Rect) {
             .unwrap_or_else(|| state.active_group.clone())
     };
 
-    let text = format!(" Grupo: [{}] (tab)", current);
+    let text = format!(" Group: [{}]", current);
     let widget = Paragraph::new(text)
         .style(Style::default().fg(Color::Cyan));
     frame.render_widget(widget, area);
@@ -134,7 +133,7 @@ fn render_summary(frame: &mut Frame, state: &AppState, area: Rect) {
 }
 
 fn render_table(frame: &mut Frame, state: &AppState, area: Rect) {
-    let header_cells = ["", "Status", "App", "Grupo", "Descrição", "Deps"]
+    let header_cells = ["", "Status", "App", "Group", "Description", "Deps"]
         .iter()
         .map(|h| Cell::from(*h).style(Style::default().bold().fg(Color::Yellow)));
     let header = Row::new(header_cells).height(1).bottom_margin(0);
@@ -217,48 +216,6 @@ fn render_table(frame: &mut Frame, state: &AppState, area: Rect) {
     frame.render_stateful_widget(table, area, &mut table_state);
 }
 
-fn render_buttons(frame: &mut Frame, state: &AppState, area: Rect) {
-    let busy = state.busy;
-    let style_active = Style::default().fg(Color::White).bg(Color::Blue);
-    let style_dim = Style::default().fg(Color::DarkGray);
-
-    let line = Line::from(vec![
-        Span::styled(
-            " [i]nstalar ",
-            if busy { style_dim } else { style_active },
-        ),
-        Span::raw(" "),
-        Span::styled(
-            " [u]pdate ",
-            if busy { style_dim } else { style_active },
-        ),
-        Span::raw(" "),
-        Span::styled(
-            " [a]smart ",
-            if busy { style_dim } else { style_active },
-        ),
-        Span::raw(" "),
-        Span::styled(
-            " [A]smart-all ",
-            if busy { style_dim } else { style_active },
-        ),
-        Span::raw(" "),
-        Span::styled(
-            " [d]esinstalar ",
-            if busy { style_dim } else { style_active },
-        ),
-        Span::raw(" "),
-        Span::styled(
-            " [r]efresh ",
-            style_active,
-        ),
-    ]);
-
-    let widget = Paragraph::new(line)
-        .block(Block::default().borders(Borders::TOP));
-    frame.render_widget(widget, area);
-}
-
 fn render_right_pane(frame: &mut Frame, state: &AppState, area: Rect) {
     // Details panel (fixed) + log (fill)
     let detail_h = 13u16;
@@ -272,7 +229,7 @@ fn render_right_pane(frame: &mut Frame, state: &AppState, area: Rect) {
 }
 
 fn render_details(frame: &mut Frame, state: &AppState, area: Rect) {
-    let block = Block::default().borders(Borders::ALL).title(" Detalhes ");
+    let block = Block::default().borders(Borders::ALL).title(" Details ");
 
     let inner = block.inner(area);
     frame.render_widget(block, area);
@@ -293,7 +250,7 @@ fn render_details(frame: &mut Frame, state: &AppState, area: Rect) {
     let reboot_uninstall = app.reboot_on.get("uninstall").copied().unwrap_or(false);
 
     let deps = if app.depends_on.is_empty() {
-        "nenhum".to_string()
+        "none".to_string()
     } else {
         app.depends_on.join(", ")
     };
@@ -305,15 +262,15 @@ fn render_details(frame: &mut Frame, state: &AppState, area: Rect) {
     };
 
     let (installed_str, supported_str) = if let Some(s) = status {
-        let inst = if s.installed { "instalado" } else { "não instalado" };
-        let supp = if s.supported { "sim" } else { "não" };
+        let inst = if s.installed { "installed" } else { "not installed" };
+        let supp = if s.supported { "yes" } else { "no" };
         (inst, supp)
     } else {
-        ("verificando...", "...")
+        ("checking...", "...")
     };
 
-    let yn = |b: bool| if b { "sim" } else { "não" };
-    let conf = |has: bool| if has { "sim" } else { "NÃO CONFIGURADO" };
+    let yn = |b: bool| if b { "yes" } else { "no" };
+    let conf = |has: bool| if has { "yes" } else { "NOT CONFIGURED" };
 
     let mut lines: Vec<Line> = vec![
         Line::from(vec![
@@ -321,22 +278,22 @@ fn render_details(frame: &mut Frame, state: &AppState, area: Rect) {
             Span::raw(&app.name),
         ]),
         Line::from(vec![
-            Span::styled("Grupo: ", Style::default().bold()),
+            Span::styled("Group: ", Style::default().bold()),
             Span::raw(if app.group.is_empty() { "-" } else { &app.group }),
         ]),
         Line::from(vec![
-            Span::styled("Descrição: ", Style::default().bold()),
+            Span::styled("Description: ", Style::default().bold()),
             Span::raw(if app.description.is_empty() { "-" } else { &app.description }),
         ]),
         Line::from(vec![
-            Span::styled("Depende de: ", Style::default().bold()),
+            Span::styled("Depends on: ", Style::default().bold()),
             Span::raw(&deps),
         ]),
         Line::from(vec![
             Span::styled("Status: ", Style::default().bold()),
             Span::styled(
                 installed_str,
-                if installed_str == "instalado" {
+                if installed_str == "installed" {
                     Style::default().fg(Color::Green)
                 } else {
                     Style::default().fg(Color::Red)
@@ -344,29 +301,29 @@ fn render_details(frame: &mut Frame, state: &AppState, area: Rect) {
             ),
         ]),
         Line::from(vec![
-            Span::styled("Suporte: ", Style::default().bold()),
+            Span::styled("Support: ", Style::default().bold()),
             Span::raw(supported_str),
         ]),
         Line::from(vec![
-            Span::styled("install: ", Style::default().bold()),
+            Span::styled("Install: ", Style::default().bold()),
             Span::raw(conf(has_install)),
             Span::raw("  reboot: "),
             Span::raw(yn(reboot_install)),
         ]),
         Line::from(vec![
-            Span::styled("update: ", Style::default().bold()),
+            Span::styled("Update: ", Style::default().bold()),
             Span::raw(conf(has_update)),
             Span::raw("  reboot: "),
             Span::raw(yn(reboot_update)),
         ]),
         Line::from(vec![
-            Span::styled("uninstall: ", Style::default().bold()),
+            Span::styled("Uninstall: ", Style::default().bold()),
             Span::raw(conf(has_uninstall)),
             Span::raw("  reboot: "),
             Span::raw(yn(reboot_uninstall)),
         ]),
         Line::from(vec![
-            Span::styled("Ação smart: ", Style::default().bold()),
+            Span::styled("Smart action: ", Style::default().bold()),
             Span::raw(smart),
         ]),
     ];
@@ -376,13 +333,13 @@ fn render_details(frame: &mut Frame, state: &AppState, area: Rect) {
         if s.supported {
             if !has_install {
                 lines.push(Line::from(Span::styled(
-                    "! sem comando install para esta distro",
+                    "! no install command for this distro",
                     Style::default().fg(Color::Red),
                 )));
             }
             if !has_update {
                 lines.push(Line::from(Span::styled(
-                    "~ sem comando update para esta distro",
+                    "~ no update command for this distro",
                     Style::default().fg(Color::Yellow),
                 )));
             }
@@ -419,7 +376,7 @@ fn render_log(frame: &mut Frame, state: &AppState, area: Rect) {
                 Style::default().fg(Color::Cyan).bold()
             } else if l.contains("exit=0") || l.contains("OK") {
                 Style::default().fg(Color::Green)
-            } else if l.contains("exit=1") || l.contains("ERRO") || l.contains("error") {
+            } else if l.contains("exit=1") || l.contains("ERROR") || l.contains("error") {
                 Style::default().fg(Color::Red)
             } else {
                 Style::default()

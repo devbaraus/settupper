@@ -1,43 +1,42 @@
 # Settupper
 
-> **Gerenciador de pacotes declarativo com TUI — configure uma vez, rode em qualquer máquina.**
+> **Declarative package manager with a TUI - configure once, run on any machine.**
 
-Settupper é uma aplicação de terminal (TUI) que lê um arquivo `YAML` ou `JSON` com a lista de programas que você precisa, verifica o que já está instalado e executa install, update ou uninstall com um clique — sem lembrar de comandos específicos de cada distro ou sistema operacional.
+Settupper is a terminal application (TUI) that reads a `YAML` or `JSON` file with the programs you need, checks what is already installed, and runs install, update, or uninstall with one click - no need to remember distro-specific or operating-system-specific commands.
 
 ![Preview](https://github.com/devbaraus/settupper/blob/main/assets/image.png)
 
 ---
 
-## Por que usar?
+## Why use it?
 
-- Você formata o computador com frequência e cansa de reinstalar tudo na mão
-- Sua equipe precisa de um ambiente padronizado sem scripts frágeis de shell
-- Você mantém múltiplas máquinas (Linux pessoal, Mac do trabalho, VM Windows) e quer uma config única
-- Prefere declarar *o que quer* em vez de lembrar *como instalar* em cada OS
-
----
-
-## Funcionalidades
-
-- **TUI interativa** com painel de lista, detalhes e log em tempo real
-- **Multi-plataforma**: Ubuntu, Fedora (e derivados), macOS, Windows
-- **Ações**: install, update, uninstall, smart (decide automaticamente)
-- **Smart All**: instala/atualiza tudo de uma vez respeitando dependências entre apps
-- **Dependências entre apps** com ordenação topológica — se `nvm` depende de `git`, git é instalado primeiro
-- **Reboot flag** — se um pacote requer reinicialização, a TUI para a fila e notifica
-- **Grupos** para organizar e filtrar apps por categoria
-- **Múltipla seleção** com `Space` para operar em vários apps de uma vez
-- **Redimensionamento** do painel dividido arrastando com o mouse
-- **Senha sudo** via modal seguro — sem expor no log ou no processo
-- **Dry-run** (`--dry-run`) para ver o que seria executado sem rodar nada
-- **Export** de snapshot do estado atual em JSON
-- **Config padrão via XDG** — sem precisar passar caminho se `~/.config/settupper/packages.yaml` existir
+- You format your computer often and are tired of reinstalling everything manually
+- Your team needs a standardized environment without fragile shell scripts
+- You maintain multiple machines (personal Linux, work Mac, Windows VM) and want one config
+- You prefer declaring *what you want* instead of remembering *how to install it* on each OS
 
 ---
 
-## Instalação
+## Features
 
-### Via script
+- **Interactive TUI** with list, details, and real-time log panels
+- **Cross-platform**: Ubuntu, Fedora (and derivatives), macOS, Windows
+- **Actions**: install, update, uninstall, smart (decides automatically)
+- **Smart All**: installs/updates everything at once while respecting app dependencies
+- **App dependencies** with topological ordering - if `nvm` depends on `git`, Git is installed first
+- **Reboot flag** - if a package requires a reboot, the TUI stops the queue and notifies you
+- **Groups** to organize and filter apps by category
+- **Multiple selection** with `Space` to operate on several apps at once
+- **Split-pane resizing** by dragging with the mouse
+- **Dry run** (`--dry-run`) to see what would be executed without running anything
+- **Export** a snapshot of the current state as JSON
+- **Default config via XDG** - no path required if `~/.config/settupper/packages.yaml` exists
+
+---
+
+## Installation
+
+### Using a script
 
 Linux/macOS:
 
@@ -57,30 +56,30 @@ Windows CMD:
 powershell -NoProfile -ExecutionPolicy Bypass -Command "irm https://raw.githubusercontent.com/devbaraus/settupper/main/install.ps1 | iex"
 ```
 
-Por padrão, os scripts buscam a última release no GitHub, detectam sistema operacional e arquitetura, baixam o binário compilado correspondente e instalam em:
+By default, the scripts fetch the latest release from GitHub, detect the operating system and architecture, download the matching compiled binary, and install it to:
 
 - Linux/macOS: `~/.local/bin/settupper`
 - Windows: `%LOCALAPPDATA%\Programs\settupper\bin\settupper.exe`
 
-Depois disso, se o diretório de instalação estiver no seu `PATH`, basta rodar:
+After that, if the installation directory is in your `PATH`, just run:
 
 ```bash
 settupper
 ```
 
-Para instalar uma versão específica:
+To install a specific version:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/devbaraus/settupper/main/install.sh | SETTUPPER_VERSION=v0.1.3 sh
+curl -fsSL https://raw.githubusercontent.com/devbaraus/settupper/main/install.sh | SETTUPPER_VERSION=v0.1.5 sh
 ```
 
-No PowerShell:
+In PowerShell:
 
 ```powershell
-$env:SETTUPPER_VERSION = "v0.1.3"; irm https://raw.githubusercontent.com/devbaraus/settupper/main/install.ps1 | iex
+$env:SETTUPPER_VERSION = "v0.1.5"; irm https://raw.githubusercontent.com/devbaraus/settupper/main/install.ps1 | iex
 ```
 
-Se o terminal não encontrar o comando `settupper`, adicione o diretório de instalação ao `PATH`. No Linux/macOS:
+If your terminal cannot find the `settupper` command, add the installation directory to `PATH`. On Linux/macOS:
 
 ```bash
 export PATH="$HOME/.local/bin:$PATH"
@@ -89,13 +88,13 @@ export PATH="$HOME/.local/bin:$PATH"
 ### Manual
 
 ```bash
-# Rodar diretamente sem instalar (recomendado para experimentar)
+# Run directly without installing (recommended for trying it out)
 cargo run
 
-# Instalar a release v0.1.3 como ferramenta
-cargo install --git https://github.com/devbaraus/settupper --tag v0.1.3 --bin settupper --locked --force
+# Install release v0.1.5 as a tool
+cargo install --git https://github.com/devbaraus/settupper --tag v0.1.5 --bin settupper --locked --force
 
-# Desenvolvimento local
+# Local development
 git clone https://github.com/devbaraus/settupper
 cd settupper
 cargo build --release
@@ -104,46 +103,46 @@ cargo build --release
 
 ---
 
-## Uso
+## Usage
 
 ```bash
-# Abre a TUI com seu arquivo de config
-settupper meus-pacotes.yaml
+# Open the TUI with your config file
+settupper my-packages.yaml
 
-# Usa config padrão em ~/.config/settupper/packages.yaml
+# Use the default config at ~/.config/settupper/packages.yaml
 settupper
 
-# Mostra o que seria executado sem rodar nada
-settupper --dry-run meus-pacotes.yaml
+# Show what would be executed without running anything
+settupper --dry-run my-packages.yaml
 ```
 
 ---
 
-## Teclas
+## Keys
 
-| Tecla       | Ação                                                  |
+| Key         | Action                                                |
 |-------------|-------------------------------------------------------|
-| `Space`     | Selecionar / desselecionar item                       |
-| `Escape`    | Limpar seleção                                        |
-| `i`         | Instalar selecionado(s)                               |
-| `u`         | Atualizar selecionado(s)                              |
-| `d`         | Desinstalar selecionado(s)                            |
-| `a`         | Smart: install ou update conforme status              |
-| `Shift+A`   | Smart All: todos os apps visíveis (respeita deps)     |
-| `r`         | Recarregar status                                     |
-| `e`         | Exportar snapshot JSON                                |
-| `q`         | Sair                                                  |
+| `Space`     | Select / deselect item                                |
+| `Escape`    | Clear selection                                       |
+| `i`         | Install selected item(s)                              |
+| `u`         | Update selected item(s)                               |
+| `d`         | Uninstall selected item(s)                            |
+| `a`         | Smart: install or update based on status              |
+| `Shift+A`   | Smart All: all visible apps (respects dependencies)   |
+| `r`         | Reload status                                         |
+| `e`         | Export JSON snapshot                                  |
+| `q`         | Quit                                                  |
 
 ---
 
-## Formato do arquivo de configuração
+## Configuration File Format
 
 ```yaml
 version: 1
 
 groups:
   - id: dev-tools
-    name: Ferramentas de Desenvolvimento
+    name: Development Tools
   - id: runtimes
     name: Runtimes
 
@@ -151,7 +150,7 @@ apps:
   - id: git
     name: Git
     group: dev-tools
-    description: Controle de versão
+    description: Version control
     check:
       default:
         - command -v git
@@ -191,7 +190,7 @@ apps:
     group: runtimes
     description: Node Version Manager
     depends_on:
-      - git                   # git será instalado antes de nvm
+      - git                   # git will be installed before nvm
     reboot_on:
       install: false
     check:
@@ -203,43 +202,43 @@ apps:
           - curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
 ```
 
-### Campos disponíveis por app
+### Available app fields
 
-| Campo         | Obrigatório | Descrição |
+| Field         | Required    | Description |
 |---------------|-------------|-----------|
-| `id`          | **sim**     | Identificador único (gerado a partir de `name` se omitido) |
-| `name`        | **sim**     | Nome exibido na TUI |
-| `description` | não         | Descrição curta |
-| `group`       | não         | ID do grupo para filtrar na TUI |
-| `depends_on`  | não         | Lista de IDs de apps que devem estar instalados antes |
-| `reboot_on`   | não         | Mapa de ação → bool indicando se precisa de reboot |
-| `check`       | não         | Comandos para verificar se está instalado (por distro ou `default`) |
-| `actions.install` | não    | Comandos de instalação por distro |
-| `actions.update`  | não    | Comandos de atualização por distro |
-| `actions.uninstall` | não  | Comandos de remoção por distro |
+| `id`          | **yes**     | Unique identifier (generated from `name` if omitted) |
+| `name`        | **yes**     | Name displayed in the TUI |
+| `description` | no          | Short description |
+| `group`       | no          | Group ID used to filter in the TUI |
+| `depends_on`  | no          | List of app IDs that must be installed first |
+| `reboot_on`   | no          | Action -> bool map indicating whether a reboot is required |
+| `check`       | no          | Commands to check whether the app is installed (by distro or `default`) |
+| `actions.install` | no     | Installation commands by distro |
+| `actions.update`  | no     | Update commands by distro |
+| `actions.uninstall` | no   | Removal commands by distro |
 
-### Distros suportadas como chave
+### Supported distro keys
 
-`ubuntu`, `fedora`, `macos`, `windows`, `default` (fallback para qualquer distro)
+`ubuntu`, `fedora`, `macos`, `windows`, `default` (fallback for any distro)
 
 ---
 
 ## Stack
 
-| Lib | Uso |
+| Lib | Usage |
 |-----|-----|
 | [Ratatui](https://github.com/ratatui-org/ratatui) | Framework TUI |
-| [Serde](https://github.com/serde-rs/serde) | Parser de config YAML |
-| [Tokio](https://docs.rs/tokio/latest/tokio/) | Gerenciamento de dependências e execução |
+| [Serde](https://github.com/serde-rs/serde) | YAML config parser |
+| [Tokio](https://docs.rs/tokio/latest/tokio/) | Dependency management and execution |
 
 ---
 
 ## Disclaimer
 
-Este projeto foi construído inteiramente através de **Vibe Coding** — uma prática onde o desenvolvedor descreve o que quer em linguagem natural e a IA (neste caso, [Claude](https://claude.ai) da Anthropic) escreve todo o código.
+This project was built entirely through **Vibe Coding** - a practice where the developer describes what they want in natural language and AI (in this case, Anthropic's [Claude](https://claude.ai)) writes all the code.
 
 ---
 
-## Licença
+## License
 
 MIT

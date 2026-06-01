@@ -94,7 +94,7 @@ fn queue_action(state: &mut AppState, action: Action) {
         .collect();
 
     if plans.is_empty() {
-        state.push_log(format!("# Nenhum app com {} disponível", action.as_str()));
+        state.push_log(format!("# No app with {} available", action.as_str()));
         return;
     }
 
@@ -112,7 +112,7 @@ fn queue_action_smart(state: &mut AppState) {
         .collect();
 
     if plans.is_empty() {
-        state.push_log("# Nenhuma ação smart disponível".to_string());
+        state.push_log("# No smart action available".to_string());
         return;
     }
 
@@ -133,7 +133,7 @@ fn queue_action_smart_all(state: &mut AppState) {
         .collect();
 
     if plans.is_empty() {
-        state.push_log("# Nenhuma ação smart-all disponível".to_string());
+        state.push_log("# No smart-all action available".to_string());
         return;
     }
 
@@ -163,7 +163,7 @@ pub fn launch_plans(state: &mut AppState, plans: Vec<ActionPlan>) {
         .collect();
 
     if groups.is_empty() {
-        state.push_log("# Nenhum comando para executar.".to_string());
+        state.push_log("# No commands to execute.".to_string());
         return;
     }
 
@@ -185,7 +185,7 @@ pub fn launch_plans(state: &mut AppState, plans: Vec<ActionPlan>) {
 pub fn start_refresh(state: &mut AppState) {
     state.busy = true;
     state.statuses.clear();
-    state.push_log("# Atualizando status...".to_string());
+    state.push_log("# Updating status...".to_string());
     workers::spawn_refresh_all(
         state.config.clone(),
         state.distro.clone(),
@@ -203,8 +203,8 @@ fn export_snapshot(state: &mut AppState) {
     let _ = std::fs::create_dir_all(&config_dir);
     let path = config_dir.join(format!("snapshot_{}.json", ts));
     match std::fs::write(&path, &json) {
-        Ok(_) => state.push_log(format!("# Exportado: {}", path.display())),
-        Err(e) => state.push_log(format!("# Erro ao exportar: {}", e)),
+        Ok(_) => state.push_log(format!("# Exported: {}", path.display())),
+        Err(e) => state.push_log(format!("# Error exporting: {}", e)),
     }
 }
 
@@ -251,7 +251,7 @@ pub fn handle_app_event(state: &mut AppState, event: AppEvent) {
         AppEvent::StatusesLoaded(statuses) => {
             state.statuses = statuses;
             state.busy = false;
-            state.push_log("# Status atualizado".to_string());
+            state.push_log("# Status updated".to_string());
         }
         AppEvent::CommandOutput(line) => {
             state.push_log(line);
@@ -278,11 +278,11 @@ pub fn handle_app_event(state: &mut AppState, event: AppEvent) {
         }
         AppEvent::AllPlansFinished => {
             state.busy = false;
-            state.push_log("# Concluído".to_string());
+            state.push_log("# Completed".to_string());
             state.pending_plans.clear();
         }
         AppEvent::Error(msg) => {
-            state.push_log(format!("# ERRO: {}", msg));
+            state.push_log(format!("# ERROR: {}", msg));
             state.busy = false;
         }
     }
@@ -381,7 +381,7 @@ mod tests {
 
         assert!(!state.busy);
         assert_eq!(state.statuses.len(), 1);
-        assert_eq!(state.log_lines.last(), Some(&"# Status atualizado".to_string()));
+        assert_eq!(state.log_lines.last(), Some(&"# Status updated".to_string()));
     }
 
     #[test]
@@ -428,6 +428,6 @@ mod tests {
 
         assert!(!state.busy);
         assert!(state.pending_plans.is_empty());
-        assert_eq!(state.log_lines.last(), Some(&"# Concluído".to_string()));
+        assert_eq!(state.log_lines.last(), Some(&"# Completed".to_string()));
     }
 }

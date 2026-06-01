@@ -496,7 +496,7 @@ pub fn run_groups_in_terminal(
     let (exe, term_name) = match find_terminal_exe() {
         Some(t) => t,
         None => {
-            result.error = "Nenhum emulador de terminal encontrado.".to_string();
+            result.error = "No terminal found.".to_string();
             return result;
         }
     };
@@ -510,7 +510,7 @@ pub fn run_groups_in_terminal(
     let tmp_dir = std::env::temp_dir().join(format!("settupper-{}", ts));
 
     if let Err(e) = std::fs::create_dir_all(&tmp_dir) {
-        result.error = format!("Falha ao criar diretório temporário: {}", e);
+        result.error = format!("Failed to create temporary directory: {}", e);
         return result;
     }
 
@@ -534,7 +534,7 @@ pub fn run_groups_in_terminal(
     };
 
     if let Err(e) = std::fs::write(&script_path, script) {
-        result.error = format!("Falha ao escrever script: {}", e);
+        result.error = format!("Failed to write script: {}", e);
         let _ = std::fs::remove_dir_all(&tmp_dir);
         return result;
     }
@@ -556,12 +556,12 @@ pub fn run_groups_in_terminal(
         .unwrap_or_default()
         .to_string_lossy()
         .into_owned();
-    on_status(format!("Abrindo terminal externo ({})...", term_display_name));
+    on_status(format!("Opening external terminal ({})...", term_display_name));
 
     let mut process = match std::process::Command::new(&argv[0]).args(&argv[1..]).spawn() {
         Ok(p) => p,
         Err(e) => {
-            result.error = format!("Falha ao abrir terminal: {}", e);
+            result.error = format!("Failed to open terminal: {}", e);
             let _ = std::fs::remove_dir_all(&tmp_dir);
             return result;
         }
@@ -574,12 +574,12 @@ pub fn run_groups_in_terminal(
             break;
         }
         if cancel.load(Ordering::Relaxed) {
-            on_status("Cancelando: feche o terminal externo para encerrar.".to_string());
+            on_status("Canceling: close the external terminal to finish.".to_string());
             break;
         }
         if let Ok(Some(_)) = process.try_wait() {
             if !done_path.exists() {
-                on_status("Terminal fechado antes de concluir.".to_string());
+                on_status("External terminal closed before completion.".to_string());
             }
             break;
         }
@@ -669,7 +669,7 @@ mod tests {
 
         assert!(!status.supported);
         assert!(!status.installed);
-        assert_eq!(status.message, "Sem comandos para ubuntu.");
+        assert_eq!(status.message, "No commands for ubuntu.");
     }
 
     #[test]

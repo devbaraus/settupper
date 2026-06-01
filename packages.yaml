@@ -2,9 +2,9 @@ version: 1
 
 groups:
   - id: dev-tools
-    name: Ferramentas de Desenvolvimento
+    name: Development Tools
   - id: editors
-    name: Editores
+    name: Editors
   - id: runtimes
     name: Runtimes
 
@@ -12,7 +12,7 @@ apps:
   - id: fish
     name: Fish Shell
     group: shell
-    description: Shell interativo moderno com autocompletar e syntax highlighting
+    description: Modern interactive shell with autocomplete and syntax highlighting
     check:
       default:
         - command -v fish
@@ -30,7 +30,7 @@ apps:
   - id: git
     name: Git
     group: dev-tools
-    description: Ferramenta de versionamento
+    description: Version control tool
     check:
       default:
         - command -v git
@@ -69,7 +69,7 @@ apps:
   - id: vscode
     name: VS Code
     group: editors
-    description: Editor de codigo
+    description: Code editor
     check:
       default:
         - command -v code
@@ -109,7 +109,7 @@ apps:
   - id: kernel-headers
     name: Kernel Headers
     group: dev-tools
-    description: Cabecalhos do kernel Linux (requer reboot)
+    description: Linux kernel headers (requires reboot)
     reboot_on:
       install: true
       update: true

@@ -8,12 +8,12 @@ BIN_DIR="$INSTALL_ROOT/bin"
 BINARY_NAME="settupper"
 
 err() {
-    echo "erro: $*" >&2
+    echo "error: $*" >&2
     exit 1
 }
 
 need_cmd() {
-    command -v "$1" >/dev/null 2>&1 || err "$1 nao encontrado."
+    command -v "$1" >/dev/null 2>&1 || err "$1 not found."
 }
 
 tmpdir=""
@@ -31,13 +31,13 @@ detect_platform() {
     case "$os" in
         Linux) os_name="linux" ;;
         Darwin) os_name="macos" ;;
-        *) err "sistema operacional nao suportado: ${os:-desconhecido}" ;;
+        *) err "unsupported operating system: ${os:-unknown}" ;;
     esac
 
     case "$arch" in
         x86_64|amd64) arch_name="x86_64" ;;
         arm64|aarch64) arch_name="aarch64" ;;
-        *) err "arquitetura nao suportada: ${arch:-desconhecida}" ;;
+        *) err "unsupported architecture: ${arch:-unknown}" ;;
     esac
 
     ARCHIVE="settupper-${os_name}-${arch_name}.tar.gz"
@@ -52,7 +52,7 @@ download() {
     elif command -v wget >/dev/null 2>&1; then
         wget -O "$output" "$url"
     else
-        err "curl ou wget nao encontrado."
+        err "curl or wget not found."
     fi
 }
 
@@ -62,11 +62,11 @@ latest_tag() {
     elif command -v wget >/dev/null 2>&1; then
         latest_url="$(wget --server-response --max-redirect=10 --spider "https://github.com/$REPO/releases/latest" 2>&1 | awk '/^  Location: / { url=$2 } END { print url }' | tr -d '\r')"
     else
-        err "curl ou wget nao encontrado."
+        err "curl or wget not found."
     fi
 
     tag="${latest_url##*/}"
-    [ -n "$tag" ] && [ "$tag" != "latest" ] || err "nao foi possivel descobrir a ultima release em https://github.com/$REPO"
+    [ -n "$tag" ] && [ "$tag" != "latest" ] || err "could not determine the latest release at https://github.com/$REPO"
     printf '%s\n' "$tag"
 }
 
@@ -81,24 +81,24 @@ tmpdir="$(mktemp -d)"
 archive_path="$tmpdir/$ARCHIVE"
 download_url="https://github.com/$REPO/releases/download/$VERSION/$ARCHIVE"
 
-echo "Baixando settupper $VERSION ($ARCHIVE)..."
+echo "Downloading settupper $VERSION ($ARCHIVE)..."
 download "$download_url" "$archive_path"
 
 tar -xzf "$archive_path" -C "$tmpdir"
-[ -f "$tmpdir/$BINARY_NAME" ] || err "binario $BINARY_NAME nao encontrado no arquivo $ARCHIVE"
+[ -f "$tmpdir/$BINARY_NAME" ] || err "binary $BINARY_NAME not found in archive $ARCHIVE"
 
 mkdir -p "$BIN_DIR"
 install -m 0755 "$tmpdir/$BINARY_NAME" "$BIN_DIR/$BINARY_NAME"
 
 echo
-echo "Settupper instalado em: $BIN_DIR/$BINARY_NAME"
+echo "Settupper installed at: $BIN_DIR/$BINARY_NAME"
 
 case ":$PATH:" in
     *":$BIN_DIR:"*)
-        echo "Execute com: settupper"
+        echo "Run with: settupper"
         ;;
     *)
-        echo "Adicione ao PATH para executar apenas com 'settupper':"
+        echo "Add it to PATH to run with just 'settupper':"
         echo "  export PATH=\"$BIN_DIR:\$PATH\""
         ;;
 esac

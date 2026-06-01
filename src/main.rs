@@ -18,12 +18,12 @@ use std::path::PathBuf;
 use std::time::Duration;
 
 #[derive(Parser)]
-#[command(name = "settupper", about = "Gerenciador de pacotes declarativo com TUI")]
+#[command(name = "settupper", about = "Declarative package manager with TUI")]
 struct Args {
-    /// Caminho para o arquivo de configuração (YAML/JSON)
+    /// Path to the configuration file (YAML/JSON)
     config: Option<PathBuf>,
 
-    /// Simula as ações sem executar
+    /// Simulate actions without executing them
     #[arg(long)]
     dry_run: bool,
 }
@@ -35,10 +35,10 @@ async fn main() -> Result<()> {
     let config_path = args
         .config
         .or_else(|| config::find_default_config())
-        .context("Nenhum arquivo de configuração encontrado. Passe um caminho ou crie ~/.config/settupper/packages.yaml")?;
+        .context("No config file found. Pass a path or create ~/.config/settupper/packages.yaml")?;
 
     let pkg_config = config::load_config(&config_path)
-        .with_context(|| format!("Falha ao carregar config: {}", config_path.display()))?;
+        .with_context(|| format!("Failed to load config: {}", config_path.display()))?;
 
     let distro = core::detect_distro();
     let config_path_str = config_path.to_string_lossy().to_string();

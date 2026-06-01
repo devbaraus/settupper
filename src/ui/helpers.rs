@@ -44,6 +44,6 @@ pub fn smart_action_label(state: &AppState, idx: usize) -> &'static str {
     match state.smart_action(idx) {
         Some(Action::Install) => "install",
         Some(Action::Update) => "update",
-        _ => "nenhuma",
+        _ => "none",
     }
 }
