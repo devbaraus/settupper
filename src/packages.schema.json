@@ -1,0 +1,189 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://settupper.local/schemas/packages.schema.json",
+  "title": "Settupper packages",
+  "description": "Schema for Settupper package configuration files.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "version": {
+      "type": "integer",
+      "minimum": 1,
+      "default": 1
+    },
+    "groups": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/group"
+      }
+    },
+    "apps": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/app"
+      }
+    }
+  },
+  "$defs": {
+    "group": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9_-]+$"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "app": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9_-]+$"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": {
+          "type": "string",
+          "default": ""
+        },
+        "group": {
+          "type": "string",
+          "default": ""
+        },
+        "depends_on": {
+          "$ref": "#/$defs/stringList"
+        },
+        "reboot_on": {
+          "type": "object",
+          "default": {},
+          "additionalProperties": {
+            "type": "boolean"
+          },
+          "properties": {
+            "install": {
+              "type": "boolean"
+            },
+            "update": {
+              "type": "boolean"
+            },
+            "uninstall": {
+              "type": "boolean"
+            }
+          }
+        },
+        "check": {
+          "$ref": "#/$defs/actionCommand"
+        },
+        "install": {
+          "$ref": "#/$defs/actionCommand"
+        },
+        "update": {
+          "$ref": "#/$defs/actionCommand"
+        },
+        "uninstall": {
+          "$ref": "#/$defs/actionCommand"
+        },
+        "actions": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "install": {
+              "$ref": "#/$defs/actionCommand"
+            },
+            "update": {
+              "$ref": "#/$defs/actionCommand"
+            },
+            "uninstall": {
+              "$ref": "#/$defs/actionCommand"
+            }
+          }
+        }
+      }
+    },
+    "actionCommand": {
+      "description": "A command string, a list of command strings, or a distro-to-commands map.",
+      "oneOf": [
+        {
+          "type": "string",
+          "minLength": 1
+        },
+        {
+          "$ref": "#/$defs/stringList"
+        },
+        {
+          "type": "object",
+          "additionalProperties": {
+            "oneOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "$ref": "#/$defs/stringList"
+              }
+            ]
+          },
+          "properties": {
+            "default": {
+              "$ref": "#/$defs/commands"
+            },
+            "all": {
+              "$ref": "#/$defs/commands"
+            },
+            "*": {
+              "$ref": "#/$defs/commands"
+            },
+            "installed": {
+              "$ref": "#/$defs/commands"
+            },
+            "ubuntu": {
+              "$ref": "#/$defs/commands"
+            },
+            "fedora": {
+              "$ref": "#/$defs/commands"
+            },
+            "macos": {
+              "$ref": "#/$defs/commands"
+            },
+            "windows": {
+              "$ref": "#/$defs/commands"
+            }
+          }
+        }
+      ]
+    },
+    "commands": {
+      "oneOf": [
+        {
+          "type": "string",
+          "minLength": 1
+        },
+        {
+          "$ref": "#/$defs/stringList"
+        }
+      ]
+    },
+    "stringList": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    }
+  }
+}
