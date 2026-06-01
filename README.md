@@ -37,14 +37,63 @@ Settupper é uma aplicação de terminal (TUI) que lê um arquivo `YAML` ou `JSO
 
 ## Instalação
 
-Requer [`rust`](https://www.rust-lang.org/tools/install):
+### Via script
+
+Linux/macOS:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/devbaraus/settupper/main/install.sh | sh
+```
+
+Windows PowerShell:
+
+```powershell
+irm https://raw.githubusercontent.com/devbaraus/settupper/main/install.ps1 | iex
+```
+
+Windows CMD:
+
+```cmd
+powershell -NoProfile -ExecutionPolicy Bypass -Command "irm https://raw.githubusercontent.com/devbaraus/settupper/main/install.ps1 | iex"
+```
+
+Por padrão, os scripts buscam a última release no GitHub, detectam sistema operacional e arquitetura, baixam o binário compilado correspondente e instalam em:
+
+- Linux/macOS: `~/.local/bin/settupper`
+- Windows: `%LOCALAPPDATA%\Programs\settupper\bin\settupper.exe`
+
+Depois disso, se o diretório de instalação estiver no seu `PATH`, basta rodar:
+
+```bash
+settupper
+```
+
+Para instalar uma versão específica:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/devbaraus/settupper/main/install.sh | SETTUPPER_VERSION=v0.1.3 sh
+```
+
+No PowerShell:
+
+```powershell
+$env:SETTUPPER_VERSION = "v0.1.3"; irm https://raw.githubusercontent.com/devbaraus/settupper/main/install.ps1 | iex
+```
+
+Se o terminal não encontrar o comando `settupper`, adicione o diretório de instalação ao `PATH`. No Linux/macOS:
+
+```bash
+export PATH="$HOME/.local/bin:$PATH"
+```
+
+### Manual
 
 ```bash
 # Rodar diretamente sem instalar (recomendado para experimentar)
 cargo run
 
-# Instalar globalmente como ferramenta
-cargo install --path .
+# Instalar a release v0.1.3 como ferramenta
+cargo install --git https://github.com/devbaraus/settupper --tag v0.1.3 --bin settupper --locked --force
 
 # Desenvolvimento local
 git clone https://github.com/devbaraus/settupper
