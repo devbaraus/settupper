@@ -14,14 +14,13 @@ use crossterm::{
 };
 use ratatui::{backend::CrosstermBackend, Terminal};
 use std::io;
-use std::path::PathBuf;
 use std::time::Duration;
 
 #[derive(Parser)]
 #[command(name = "settupper", about = "Declarative package manager with TUI")]
 struct Args {
-    /// Path to the configuration file (YAML/JSON)
-    config: Option<PathBuf>,
+    /// Path or URL to the configuration file (YAML/JSON)
+    config: Option<String>,
 
     /// Simulate actions without executing them
     #[arg(long)]
@@ -34,16 +33,17 @@ async fn main() -> Result<()> {
 
     let config_path = args
         .config
-        .or_else(|| config::find_default_config())
+        .or_else(|| {
+            config::find_default_config().map(|path| path.to_string_lossy().into_owned())
+        })
         .context("No config file found. Pass a path or create ~/.config/settupper/packages.yaml")?;
 
-    let pkg_config = config::load_config(&config_path)
-        .with_context(|| format!("Failed to load config: {}", config_path.display()))?;
+    let pkg_config = config::load_config_source(&config_path)
+        .with_context(|| format!("Failed to load config: {config_path}"))?;
 
     let distro = core::detect_distro();
-    let config_path_str = config_path.to_string_lossy().to_string();
 
-    let mut state = app::AppState::new(pkg_config, config_path_str, distro, args.dry_run);
+    let mut state = app::AppState::new(pkg_config, config_path, distro, args.dry_run);
 
     // Initial refresh
     events::start_refresh(&mut state);

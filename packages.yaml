@@ -1,3 +1,4 @@
+$schema: https://github.com/devbaraus/settupper/blob/main/src/packages.schema.json
 version: 1
 
 groups:

@@ -65,11 +65,32 @@ struct RawConfig {
 pub fn load_config(path: &Path) -> Result<PackageConfig> {
     let content = std::fs::read_to_string(path)
         .with_context(|| format!("Failed to read config file: {}", path.display()))?;
+    parse_config(&content, path.to_string_lossy().as_ref())
+}
 
-    let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("");
+pub fn load_config_source(source: &str) -> Result<PackageConfig> {
+    if source.starts_with("http://") || source.starts_with("https://") {
+        let response = ureq::get(source)
+            .call()
+            .with_context(|| format!("Failed to download config file: {source}"))?;
+        let content = response
+            .into_string()
+            .with_context(|| format!("Failed to read downloaded config file: {source}"))?;
+        parse_config(&content, source)
+    } else {
+        load_config(Path::new(source))
+    }
+}
+
+fn parse_config(content: &str, source: &str) -> Result<PackageConfig> {
+    let source_path = source.split(['?', '#']).next().unwrap_or(source);
+    let ext = Path::new(source_path)
+        .extension()
+        .and_then(|e| e.to_str())
+        .unwrap_or("");
     let raw: RawConfig = match ext {
-        "json" => serde_json::from_str(&content).context("Failed to parse JSON config")?,
-        _ => serde_yaml::from_str(&content).context("Failed to parse YAML config")?,
+        "json" => serde_json::from_str(content).context("Failed to parse JSON config")?,
+        _ => serde_yaml::from_str(content).context("Failed to parse YAML config")?,
     };
 
     let mut apps = Vec::new();
@@ -233,6 +254,9 @@ pub fn find_default_config() -> Option<PathBuf> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::io::{Read, Write};
+    use std::net::TcpListener;
+    use std::thread;
 
     fn write_temp_config(name: &str, content: &str) -> PathBuf {
         let path = std::env::temp_dir().join(format!(
@@ -344,5 +368,42 @@ apps:
         let _ = std::fs::remove_file(path);
 
         assert!(err.to_string().contains("Failed to parse app #0"));
+    }
+
+    #[test]
+    fn load_config_source_downloads_yaml_url() {
+        let listener = TcpListener::bind("127.0.0.1:0").expect("bind test server");
+        let address = listener.local_addr().expect("test server address");
+        let server = thread::spawn(move || {
+            let (mut stream, _) = listener.accept().expect("accept request");
+            let mut request = [0; 1024];
+            let _ = stream.read(&mut request).expect("read request");
+            let body = "apps:\n  - name: Remote App\n";
+            write!(
+                stream,
+                "HTTP/1.1 200 OK\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                body.len(),
+                body
+            )
+            .expect("write response");
+        });
+
+        let source = format!("http://{address}/packages.yaml");
+        let config = load_config_source(&source).expect("load remote config");
+        server.join().expect("join test server");
+
+        assert_eq!(config.apps[0].name, "Remote App");
+        assert_eq!(config.apps[0].id, "remote-app");
+    }
+
+    #[test]
+    fn parse_config_detects_json_before_url_query() {
+        let config = parse_config(
+            r#"{"apps":[{"name":"Remote JSON"}]}"#,
+            "https://example.com/packages.json?download=1",
+        )
+        .expect("parse remote json");
+
+        assert_eq!(config.apps[0].name, "Remote JSON");
     }
 }
