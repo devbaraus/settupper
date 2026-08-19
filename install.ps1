@@ -70,12 +70,36 @@ try {
     Write-Host ""
     Write-Host "Settupper installed at: $(Join-Path $InstallDir $BinaryName)"
 
-    $PathEntries = ($env:PATH -split ";") | ForEach-Object { $_.TrimEnd("\") }
-    if ($PathEntries -contains $InstallDir.TrimEnd("\")) {
+    # Safely handle PATH injection
+    $NormalizedInstallDir = $InstallDir.TrimEnd("\")
+    $ProcessPathEntries = ($env:PATH -split ";") | ForEach-Object { $_.TrimEnd("\") }
+    
+    if ($ProcessPathEntries -contains $NormalizedInstallDir) {
         Write-Host "Run with: settupper"
     } else {
-        Write-Host "Add it to PATH to run with just 'settupper':"
-        Write-Host "  setx PATH `"$env:PATH;$InstallDir`""
+        Write-Host "Adding to User PATH..."
+        
+        # Get purely the User PATH to avoid mixing with Machine PATH
+        $UserPath = [Environment]::GetEnvironmentVariable("PATH", "User")
+        
+        if ([string]::IsNullOrWhiteSpace($UserPath)) {
+            $NewUserPath = $NormalizedInstallDir
+        } else {
+            $NewUserPath = $UserPath.TrimEnd(";") + ";" + $NormalizedInstallDir
+        }
+        
+        try {
+            # Set the User PATH permanently
+            [Environment]::SetEnvironmentVariable("PATH", $NewUserPath, "User")
+            
+            # Append to the current session so the user can run it immediately without restarting
+            $env:PATH += ";$NormalizedInstallDir"
+            
+            Write-Host "Successfully added to PATH. You can now run with just 'settupper'"
+        } catch {
+            Write-Host "Failed to automatically add to PATH. Please add it manually via Environment Variables:"
+            Write-Host "  $NormalizedInstallDir"
+        }
     }
 } finally {
     if (Test-Path $TempDir) {
