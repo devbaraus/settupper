@@ -2,18 +2,132 @@ $schema: https://github.com/devbaraus/settupper/blob/main/src/packages.schema.js
 version: 1
 
 groups:
+  - id: cli
+    name: Aplicações de Terminal
+  - id: browser
+    name: Navegadores
+  - id: repos
+    name: Repositórios
+  - id: shell
+    name: Shell e Terminal
   - id: dev-tools
-    name: Development Tools
+    name: Ferramentas de Desenvolvimento
   - id: editors
-    name: Editors
+    name: Editores
   - id: runtimes
     name: Runtimes
+  - id: containers
+    name: Containers
+  - id: apps
+    name: Aplicativos
+  - id: system
+    name: Sistema
+  - id: browser
+    name: Navegadores
 
 apps:
+  - id: chrome
+    name: Google Chrome
+    group: browser
+    description: Navegador web do Google
+    check:
+      default:
+        - command -v google-chrome
+      windows:
+        - where chrome
+    actions:
+      install:
+        ubuntu:
+          - wget -q -O google-chrome-stable_current_x86_64.deb  https://dl.google.com/linux/direct/google-chrome-stable_current_x86_64.deb
+          - sudo dpkg -i google-chrome-stable_current_x86_64.deb
+          - sudo apt-get install -f -y
+          - rm google-chrome-stable_current_x86_64.deb
+        fedora:
+          - wget -q -O google-chrome-stable_current_x86_64.rpm https://dl.google.com/linux/direct/google-chrome-stable_current_x86_64.rpm
+          - sudo dnf install google-chrome-stable_current_x86_64.rpm -y
+          - rm google-chrome-stable_current_x86_64.rpm
+        macos:
+          - brew install --cask google-chrome
+        windows:
+          - winget install --id Google.Chrome -e --source winget
+      update:
+        ubuntu:
+          - wget -q -O google-chrome-stable_current_x86_64.deb  https://dl.google.com/linux/direct/google-chrome-stable_current_x86_64.deb
+          - sudo dpkg -i google-chrome-stable_current_x86_64.deb
+          - sudo apt-get install -f -y
+          - rm google-chrome-stable_current_x86_64.deb
+        fedora:
+          - wget -q -O google-chrome-stable_current_x86_64.rpm https://dl.google.com/linux/direct/google-chrome-stable_current_x86_64.rpm
+          - sudo dnf install google-chrome-stable_current_x86_64.rpm -y
+          - rm google-chrome-stable_current_x86_64.rpm
+        macos:
+          - brew upgrade --cask google-chrome
+        windows:
+          - winget upgrade --id Google.Chrome -e
+      uninstall:
+        ubuntu:
+          - sudo apt remove google-chrome-stable -y
+        fedora:
+          - sudo dnf remove google-chrome-stable -y
+        macos:
+          - brew uninstall --cask google-chrome
+        windows:
+          - winget uninstall --id Google.Chrome -e
+  - id: dbeaver
+    name: DBeaver
+    group: database
+    description: Ferramenta de gerenciamento de banco de dados universal
+    check:
+      default:
+        - command -v dbeaver
+    actions:
+      install:
+        fedora:
+          - curl -L -o dbeaver-ce-latest-stable.x86_64.rpm https://dbeaver.io/files/dbeaver-ce-latest-stable.x86_64.rpm
+          - sudo dnf install ./dbeaver-ce-latest-stable.x86_64.rpm -y
+      update:
+        fedora:
+          - curl -L -o dbeaver-ce-latest-stable.x86_64.rpm https://dbeaver.io/files/dbeaver-ce-latest-stable.x86_64.rpm
+          - sudo dnf install ./dbeaver-ce-latest-stable.x86_64.rpm -y
+      uninstall:
+        fedora:
+          - sudo dnf remove dbeaver-ce -y
+  - id: terra-release
+    name: Terra Repository
+    group: repos
+    description: Repositório Terra (Fyra Labs) para Fedora
+    check:
+      fedora:
+        - dnf repolist | grep -q terra
+    actions:
+      install:
+        fedora:
+          - sudo dnf install --nogpgcheck --repofrompath 'terra,https://repos.fyralabs.com/terra$releasever' terra-release -y
+      uninstall:
+        fedora:
+          - sudo dnf remove -y terra-release
+
+  - id: rpmfusion
+    name: RPM Fusion
+    group: repos
+    description: Repositórios RPM Fusion Free e Nonfree
+    check:
+      fedora:
+        - dnf repolist | grep -q rpmfusion
+    actions:
+      install:
+        fedora:
+          - sudo dnf install https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm -y
+      uninstall:
+        fedora:
+          - sudo dnf remove -y rpmfusion-free-release rpmfusion-nonfree-release
+
+  # ── SHELL ──────────────────────────────────────────────────────────────────
+
   - id: fish
     name: Fish Shell
     group: shell
-    description: Modern interactive shell with autocomplete and syntax highlighting
+    description: Shell interativo moderno com autocompletar e syntax highlighting
     check:
       default:
         - command -v fish
@@ -22,16 +136,128 @@ apps:
         fedora:
           - sudo dnf install fish -y
           - chsh -s $(which fish)
+        ubuntu:
+          - sudo apt install fish -y
+          - chsh -s $(which fish)
+        macos:
+          - brew install fish
+          - chsh -s $(which fish)
       update:
         fedora:
           - sudo dnf upgrade -y fish
+        ubuntu:
+          - sudo apt upgrade -y fish
+        macos:
+          - brew upgrade fish
       uninstall:
         fedora:
           - sudo dnf remove -y fish
+        ubuntu:
+          - sudo apt remove fish -y
+        macos:
+          - brew uninstall fish
+
+  - id: starship
+    name: Starship Prompt
+    group: shell
+    description: Prompt minimalista e rápido para qualquer shell
+    depends_on:
+      - fish
+    check:
+      default:
+        - command -v starship
+    actions:
+      install:
+        default:
+          - curl -sS https://starship.rs/install.sh | sh
+          - echo "starship init fish | source" >> ~/.config/fish/config.fish
+      update:
+        default:
+          - curl -sS https://starship.rs/install.sh | sh
+      uninstall:
+        default:
+          - sh -c "$(curl -sS https://starship.rs/install.sh)" -- --uninstall
+
+  - id: fisher
+    name: Fisher
+    group: shell
+    description: Gerenciador de plugins para Fish Shell
+    depends_on:
+      - fish
+    check:
+      default:
+        - fish -c "fisher --version" 2>/dev/null
+    actions:
+      install:
+        default:
+          - curl -sL https://raw.githubusercontent.com/jorgebucaran/fisher/main/functions/fisher.fish | source && fisher install jorgebucaran/fisher
+      update:
+        default:
+          - fish -c "fisher update"
+      uninstall:
+        default:
+          - fish -c "fisher remove jorgebucaran/fisher"
+
+  - id: sdkman-fish-plugin
+    name: SDKMAN for Fish
+    group: shell
+    description: Plugin Fisher para integração do SDKMAN com Fish Shell
+    depends_on:
+      - fisher
+      - sdkman
+    check:
+      default:
+        - fish -c "fisher list" 2>/dev/null | grep -q sdkman-for-fish
+    actions:
+      install:
+        default:
+          - fish -c "fisher install reitzig/sdkman-for-fish@v2.1.0"
+      uninstall:
+        default:
+          - fish -c "fisher remove reitzig/sdkman-for-fish"
+
+  - id: zenbrowser
+    name: Zen browser
+    group: browser 
+    description: Navegador Zen Browser
+    check:
+      default:
+        - command -v zen-browser
+    actions:
+      install:
+        fedora: 
+          - sudo dnf copr enable sneexy/zen-browser -y
+          - sudo dnf install zen-browser -y
+      update:
+        fedora:
+          - sudo dnf upgrade zen-browser -y
+      uninstall:
+        fedora:
+          - sudo dnf remove zen-browser -y
+
+  # ── DEV TOOLS ──────────────────────────────────────────────────────────────
+  - id: gitkraken
+    name: GitKraken
+    group: dev-tools
+    description: Cliente Git gráfico e multiplataforma
+    check:
+      default:
+        - command -v gitkraken
+    actions:
+      install:
+        fedora:
+          - sudo dnf install https://release.gitkraken.com/linux/gitkraken-amd64.rpm -y
+      update:
+        fedora:
+          - sudo dnf upgrade https://release.gitkraken.com/linux/gitkraken-amd64.rpm -y
+      uninstall:
+        fedora:
+          - sudo dnf remove gitkraken -y
+
   - id: git
     name: Git
     group: dev-tools
-    description: Version control tool
+    description: Ferramenta de versionamento
     check:
       default:
         - command -v git
@@ -42,8 +268,8 @@ apps:
         ubuntu:
           - sudo apt-get update
           - sudo apt-get install -y git
-        # fedora:
-        #   - sudo dnf install -y git
+        fedora:
+          - sudo dnf install -y git
         macos:
           - brew install git
         windows:
@@ -67,10 +293,35 @@ apps:
         windows:
           - winget uninstall --id Git.Git -e
 
+  - id: development-tools
+    name: Development Tools (grupo DNF)
+    group: dev-tools
+    description: Grupo de ferramentas de compilação e desenvolvimento (gcc, make, etc.)
+    check:
+      default:
+        - command -v gcc
+    actions:
+      install:
+        ubuntu:
+          - sudo apt install build-essential -y
+        fedora:
+          - sudo dnf install @development-tools -y
+        macos:
+          - xcode-select --install
+      uninstall:
+        ubuntu:
+          - sudo apt remove build-essential -y
+        fedora:
+          - sudo dnf group remove -y development-tools
+        macos:
+          - xcode-select --uninstall
+          
+  # ── EDITORS ────────────────────────────────────────────────────────────────
+
   - id: vscode
     name: VS Code
     group: editors
-    description: Code editor
+    description: Editor de código
     check:
       default:
         - command -v code
@@ -82,8 +333,8 @@ apps:
           - sudo snap install code --classic
         fedora:
           - sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
-          - sudo sh -c 'printf "[code]\nname=Visual Studio Code\nbaseurl=https://packages.microsoft.com/yumrepos/vscode\nenabled=1\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc\n" > /etc/yum.repos.d/vscode.repo'
-          - sudo dnf install -y code
+          - echo -e "[code]\nname=Visual Studio Code\nbaseurl=https://packages.microsoft.com/yumrepos/vscode\nenabled=1\nautorefresh=1\ntype=rpm-md\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc" | sudo tee /etc/yum.repos.d/vscode.repo > /dev/null
+          - sudo dnf install code
         macos:
           - brew install --cask visual-studio-code
         windows:
@@ -107,89 +358,428 @@ apps:
         windows:
           - winget uninstall --id Microsoft.VisualStudioCode -e
 
-  - id: kernel-headers
-    name: Kernel Headers
-    group: dev-tools
-    description: Linux kernel headers (requires reboot)
-    reboot_on:
-      install: true
-      update: true
+
+# AI CLI
+  - id: antigravity-cli
+    name: Antigravity CLI
+    group: cli
     check:
       default:
-        - test -d /usr/src/linux-headers-$(uname -r)
+        - command -v agy
     actions:
       install:
-        ubuntu:
-          - sudo apt-get update
-          - sudo apt-get install -y linux-headers-$(uname -r)
         fedora:
-          - sudo dnf install -y kernel-devel kernel-headers
+          - curl -fsSL https://antigravity.google/cli/install.sh | bash
       update:
-        ubuntu:
-          - sudo apt-get install --only-upgrade -y linux-headers-$(uname -r)
         fedora:
-          - sudo dnf upgrade -y kernel-devel kernel-headers
+          - curl -fsSL https://antigravity.google/cli/install.sh
       uninstall:
-        ubuntu:
-          - sudo apt-get remove -y linux-headers-$(uname -r)
         fedora:
-          - sudo dnf remove -y kernel-devel kernel-headers
+          - rm -rf ~/.local/bin/ag ~/.local/bin/agy
+          - rm -rf ~/.antigravity-server ~/.antigravity
 
-  - id: nodejs
-    name: Node.js
+  - id: claude-code
+    name: Claude Code
+    group: cli
+    check:
+      default:
+        - command -v claude
+    actions:
+      install:
+        fedora:
+          - npm i -g @anthropic-ai/claude-code
+      update:
+        fedora:
+          - npm i -g @anthropic-ai/claude-code@latest
+      uninstall:
+        fedora:
+          - npm uninstall -g @anthropic-ai/claude-code
+
+  - id: OpenAI Codex
+    name: OpenAI Codex
+    group: cli
+    check:
+      default:
+        - command -v codex
+    actions:
+      install:
+        fedora:
+          - npm i -g @openai/codex
+      update:
+        fedora:
+          - npm i -g @openai/codex@latest
+      uninstall:
+        fedora:
+          - npm uninstall -g @openai/codex
+
+  # ── RUNTIMES ───────────────────────────────────────────────────────────────
+  - id: rust
+    name: Rust
     group: runtimes
-    description: Runtime JavaScript
+    description: Linguagem de programação Rust
+    check:
+      default:
+        - command -v rustup
+    actions:
+      install:
+        default:
+          - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+      update:
+        default:
+          - rustup update
+      uninstall:
+        default:
+          - rustup self uninstall
+
+  - id: volta
+    name: Volta
+    group: runtimes
+    description: Gerenciador de versões JavaScript (Node.js e Bun)
+    depends_on:
+      - fish
+    check:
+      default:
+        - command -v volta
+    actions:
+      install:
+        default:
+          - curl https://get.volta.sh | bash
+          - source ~/.config/fish/config.fish
+          - volta install node
+          - volta install bun
+      update:
+        default:
+          - volta install node
+          - volta install bun
+      uninstall:
+        default:
+          - rm -rf "$HOME/.volta"
+
+  - id: bun
+    name: Bun
+    group: runtimes
+    description: Gerenciador de pacotes JavaScript
+    check:
+      default:
+        - command -v bun
+    actions:
+      install:
+        default:
+          - volta install bun
+      update:
+        default:
+          - bun upgrade
+      uninstall:
+        default:
+          - volta uninstall bun
+  
+  - id: nodejs
+    name: NodeJS
+    group: runtimes
+    description: Ambiente de execução JavaScript
+    depends_on:
+      - volta
     check:
       default:
         - command -v node
-      windows:
-        - where node
     actions:
       install:
-        ubuntu:
-          - sudo apt-get update
-          - sudo apt-get install -y nodejs npm
-        fedora:
-          - sudo dnf install -y nodejs npm
-        macos:
-          - brew install node
-        windows:
-          - winget install --id OpenJS.NodeJS -e --source winget
+        default:
+          - volta install node
       update:
-        ubuntu:
-          - sudo apt-get install --only-upgrade -y nodejs npm
-        fedora:
-          - sudo dnf upgrade -y nodejs npm
-        macos:
-          - brew upgrade node
-        windows:
-          - winget upgrade --id OpenJS.NodeJS -e
+        default:
+          - volta install node
       uninstall:
-        ubuntu:
-          - sudo apt-get remove -y nodejs npm
-        fedora:
-          - sudo dnf remove -y nodejs npm
-        macos:
-          - brew uninstall node
-        windows:
-          - winget uninstall --id OpenJS.NodeJS -e
+        default:
+          - volta uninstall node
 
-  - id: nvm
-    name: NVM
+  - id: uv
+    name: uv
     group: runtimes
-    description: Node Version Manager
-    depends_on:
-      - git
+    description: Gerenciador de pacotes e projetos Python (Astral)
     check:
       default:
-        - test -d "$HOME/.nvm"
+        - command -v uv
     actions:
       install:
         default:
-          - curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
+          - curl -LsSf https://astral.sh/uv/install.sh | sh
+          - source ~/.config/fish/config.fish
       update:
         default:
-          - curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
+          - uv self update
       uninstall:
         default:
-          - rm -rf "$HOME/.nvm"
+          - rm -f $(which uv)
+  - id: pyenv
+    name: Pyenv
+    group: runtimes
+    description: Gerenciador de versões Python
+    check:
+      default:
+        - command -v pyenv
+    actions:
+      install:
+        default:
+          - curl -fsSL https://pyenv.run | bash
+          - set -Ux PYENV_ROOT $HOME/.pyenv
+          - test -d $PYENV_ROOT/bin; and fish_add_path $PYENV_ROOT/bin
+          - pyenv init - fish | source
+      update:
+        default:
+          - pyenv update
+      uninstall:
+        default:
+          - rm -rf $(pyenv root)
+
+  - id: poetry
+    name: Poetry
+    group: runtimes
+    description: Gerenciador de dependências e empacotamento Python
+    check:
+      default:
+        - command -v poetry
+    actions:
+      install:
+        default:
+          - curl -sSL https://install.python-poetry.org | python3 -
+      update:
+        default:
+          - poetry self update
+      uninstall:
+        default:
+          - curl -sSL https://install.python-poetry.org | python3 - --uninstall
+
+  - id: sdkman
+    name: SDKMAN
+    group: runtimes
+    description: Gerenciador de SDKs para JVM (Java, Kotlin, Scala, etc.)
+    check:
+      default:
+        - test -d "$HOME/.sdkman"
+    actions:
+      install:
+        default:
+          - curl -s "https://get.sdkman.io" | bash
+      update:
+        default:
+          - bash -c 'source "$HOME/.sdkman/bin/sdkman-init.sh" && sdk selfupdate'
+      uninstall:
+        default:
+          - rm -rf "$HOME/.sdkman"
+
+  # ── CONTAINERS ─────────────────────────────────────────────────────────────
+
+  - id: docker
+    name: Docker
+    group: containers
+    description: Plataforma de containers
+    check:
+      default:
+        - command -v docker
+    actions:
+      install:
+        fedora:
+          - sudo dnf config-manager addrepo --from-repofile https://download.docker.com/linux/fedora/docker-ce.repo
+          - sudo dnf install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin -y
+          - sudo systemctl enable --now docker
+          - sudo groupadd docker || true
+          - sudo usermod -aG docker $USER
+      update:
+        fedora:
+          - sudo dnf upgrade -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+      uninstall:
+        fedora:
+          - sudo dnf remove -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+          - sudo systemctl disable --now docker || true
+
+  - id: docker-network-config
+    name: Docker Network Config (PUC)
+    group: containers
+    description: Configuração de rede do Docker para evitar conflito de IPs (padrão PUC)
+    depends_on:
+      - docker
+    check:
+      default:
+        - test -f /etc/docker/daemon.json && grep -q "default-address-pools" /etc/docker/daemon.json
+    actions:
+      install:
+        default:
+          - sudo mkdir -p /etc/docker/
+          - |
+            echo '{
+              "bip": "192.168.1.1/24",
+              "default-address-pools": [
+                {
+                  "base": "10.0.0.0/8",
+                  "size": 24
+                }
+              ]
+            }' | sudo tee /etc/docker/daemon.json
+          - sudo systemctl restart docker
+      uninstall:
+        default:
+          - sudo rm -f /etc/docker/daemon.json
+          - sudo systemctl restart docker
+
+  # ── APPS ───────────────────────────────────────────────────────────────────
+
+  - id: vlc
+    name: VLC
+    group: apps
+    description: Reprodutor de mídia universal
+    check:
+      default:
+        - command -v vlc
+    actions:
+      install:
+        fedora:
+          - sudo dnf install vlc -y
+      update:
+        fedora:
+          - sudo dnf upgrade -y vlc
+      uninstall:
+        fedora:
+          - sudo dnf remove -y vlc
+
+  - id: obs-studio
+    name: OBS Studio
+    group: apps
+    description: Software de gravação e transmissão de vídeo
+    check:
+      default:
+        - command -v obs
+    actions:
+      install:
+        fedora:
+          - sudo dnf install obs-studio -y
+      update:
+        fedora:
+          - sudo dnf upgrade -y obs-studio
+      uninstall:
+        fedora:
+          - sudo dnf remove -y obs-studio
+
+  - id: qbittorrent
+    name: qBittorrent
+    group: apps
+    description: Cliente BitTorrent open-source
+    check:
+      default:
+        - command -v qbittorrent
+    actions:
+      install:
+        fedora:
+          - sudo dnf install qbittorrent -y
+      update:
+        fedora:
+          - sudo dnf upgrade -y qbittorrent
+      uninstall:
+        fedora:
+          - sudo dnf remove -y qbittorrent
+
+  - id: discord
+    name: Discord
+    group: apps
+    description: Plataforma de comunicação para comunidades
+    depends_on:
+      - rpmfusion
+    check:
+      default:
+        - command -v discord
+    actions:
+      install:
+        fedora:
+          - sudo dnf install discord -y
+      update:
+        fedora:
+          - sudo dnf upgrade -y discord
+      uninstall:
+        fedora:
+          - sudo dnf remove -y discord
+
+  - id: steam
+    name: Steam
+    group: apps
+    description: Plataforma de distribuição de jogos
+    depends_on:
+      - rpmfusion
+    check:
+      default:
+        - command -v steam
+      windows:
+        - where steam
+    actions:
+      install:
+        fedora:
+          - sudo dnf install steam -y
+        ubuntu:
+          - sudo apt-get update && sudo apt-get install -y steam
+        macos:
+          - brew install --cask steam
+        windows:
+          - winget install --id Valve.Steam -e --source winget
+      update:
+        fedora:
+          - sudo dnf upgrade -y steam
+        ubuntu:
+          - sudo apt-get install --only-upgrade -y steam
+        macos:
+          - brew upgrade --cask steam
+        windows:
+          - winget upgrade --id Valve.Steam -e
+      uninstall:
+        fedora:
+          - sudo dnf remove -y steam
+        ubuntu:
+          - sudo apt-get remove -y steam
+        macos:
+          - brew uninstall --cask steam
+        windows:
+          - winget uninstall --id Valve.Steam -e
+
+  - id: termius
+    name: Termius
+    group: apps
+    description: Cliente SSH multiplataforma
+    check:
+      default:
+        - test -f /opt/Termius/termius-app
+      windows:
+        - where termius
+    actions:
+      install:
+        fedora:
+          - sudo dnf copr enable fatgrizzly/termius -y
+          - sudo dnf install termius-app -y
+        windows:
+          - winget install Termius.Termius
+      update:
+        fedora:
+          - sudo dnf upgrade -y termius-app
+        windows:
+          - winget upgrade Termius.Termius
+      uninstall:
+        fedora:
+          - sudo dnf remove -y termius-app
+          - sudo dnf copr disable fatgrizzly/termius
+        windows:
+          - winget uninstall Termius.Termius
+
+  # ── SYSTEM ─────────────────────────────────────────────────────────────────
+
+  - id: audio-powersave-fix
+    name: Audio Power Save Fix
+    group: system
+    description: Desativa power save do driver snd_hda_intel para evitar pop/clique no som
+    check:
+      default:
+        - grep -q "power_save=0" /etc/modprobe.d/audio_disable_powersave.conf 2>/dev/null
+    actions:
+      install:
+        default:
+          - echo "0" | sudo tee /sys/module/snd_hda_intel/parameters/power_save
+          - echo "options snd_hda_intel power_save=0" | sudo tee -a /etc/modprobe.d/audio_disable_powersave.conf
+      uninstall:
+        default:
+          - sudo sed -i '/options snd_hda_intel power_save=0/d' /etc/modprobe.d/audio_disable_powersave.conf
