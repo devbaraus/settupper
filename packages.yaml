@@ -624,6 +624,38 @@ apps:
 
   # ── APPS ───────────────────────────────────────────────────────────────────
 
+  - id: thunderbird
+    name: Mozilla Thunderbird
+    group: apps
+    description: Cliente de e-mail gratuito e open-source
+    check:
+      default:
+        - command -v thunderbird
+      windows:
+        - where thunderbird
+    actions:
+      install:
+        ubuntu:
+          - sudo apt-get install -y thunderbird
+        fedora:
+          - sudo dnf install -y thunderbird
+        windows:
+          - winget install --id Mozilla.Thunderbird -e --source winget
+      update:
+        ubuntu:
+          - sudo apt-get install --only-upgrade -y thunderbird
+        fedora:
+          - sudo dnf upgrade -y thunderbird
+        windows:
+          - winget upgrade --id Mozilla.Thunderbird -e
+      uninstall:
+        ubuntu:
+          - sudo apt-get remove -y thunderbird
+        fedora:
+          - sudo dnf remove -y thunderbird
+        windows:
+          - winget uninstall --id Mozilla.Thunderbird -e
+
   - id: vlc
     name: VLC
     group: apps
