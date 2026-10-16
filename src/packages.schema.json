@@ -154,7 +154,19 @@
             "ubuntu": {
               "$ref": "#/$defs/commands"
             },
+            "debian": {
+              "$ref": "#/$defs/commands"
+            },
             "fedora": {
+              "$ref": "#/$defs/commands"
+            },
+            "rhel": {
+              "$ref": "#/$defs/commands"
+            },
+            "arch": {
+              "$ref": "#/$defs/commands"
+            },
+            "archlinux": {
               "$ref": "#/$defs/commands"
             },
             "macos": {

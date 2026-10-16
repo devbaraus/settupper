@@ -20,7 +20,7 @@ Settupper is a terminal application (TUI) that reads a `YAML` or `JSON` file wit
 ## Features
 
 - **Interactive TUI** with list, details, and real-time log panels
-- **Cross-platform**: Ubuntu, Fedora (and derivatives), macOS, Windows
+- **Cross-platform**: Ubuntu/Debian, Fedora/RHEL, Arch Linux (and their derivatives), macOS, Windows
 - **Actions**: install, update, uninstall, smart (decides automatically)
 - **Smart All**: installs/updates everything at once while respecting app dependencies
 - **App dependencies** with topological ordering - if `nvm` depends on `git`, Git is installed first
@@ -162,6 +162,8 @@ apps:
           - sudo apt-get install -y git
         fedora:
           - sudo dnf install -y git
+        arch:
+          - sudo pacman -S --noconfirm git
         macos:
           - brew install git
         windows:
@@ -171,6 +173,8 @@ apps:
           - sudo apt-get install --only-upgrade -y git
         fedora:
           - sudo dnf upgrade -y git
+        arch:
+          - sudo pacman -Syu --noconfirm git
         macos:
           - brew upgrade git
         windows:
@@ -180,6 +184,8 @@ apps:
           - sudo apt-get remove -y git
         fedora:
           - sudo dnf remove -y git
+        arch:
+          - sudo pacman -Rns --noconfirm git
         macos:
           - brew uninstall git
         windows:
@@ -219,7 +225,7 @@ apps:
 
 ### Supported distro keys
 
-`ubuntu`, `fedora`, `macos`, `windows`, `default` (fallback for any distro)
+`ubuntu` (also `debian`, `linuxmint`, `pop`, `zorin`, `kali`, etc.), `fedora` (also `rhel`, `centos`, `rocky`, `almalinux`, `nobara`, `bazzite`, etc.), `arch` (also `archlinux`, `manjaro`, `endeavouros`, `cachyos`, `garuda`, etc.), `macos`, `windows`, `default` (fallback for any distro)
 
 ---
 
