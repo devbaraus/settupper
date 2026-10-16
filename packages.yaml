@@ -557,6 +557,103 @@ apps:
         default:
           - rustup self uninstall
 
+  - id: cargo
+    name: Cargo
+    group: runtimes
+    description: Gerenciador de pacotes e sistema de build do Rust
+    depends_on:
+      - rust
+    check:
+      default:
+        - command -v cargo || test -x "$HOME/.cargo/bin/cargo"
+      windows:
+        - where cargo
+    actions:
+      install:
+        ubuntu:
+          - command -v rustup >/dev/null 2>&1 && rustup toolchain install stable || sudo apt-get install -y cargo
+        fedora:
+          - command -v rustup >/dev/null 2>&1 && rustup toolchain install stable || sudo dnf install -y cargo
+        arch:
+          - command -v rustup >/dev/null 2>&1 && rustup toolchain install stable || sudo pacman -S --noconfirm rust
+        macos:
+          - command -v rustup >/dev/null 2>&1 && rustup toolchain install stable || brew install rust
+        windows:
+          - winget install --id Rustlang.Rustup -e --source winget
+        default:
+          - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+      update:
+        ubuntu:
+          - command -v rustup >/dev/null 2>&1 && rustup update || sudo apt-get install --only-upgrade -y cargo
+        fedora:
+          - command -v rustup >/dev/null 2>&1 && rustup update || sudo dnf upgrade -y cargo
+        arch:
+          - command -v rustup >/dev/null 2>&1 && rustup update || sudo pacman -Syu --noconfirm rust
+        macos:
+          - command -v rustup >/dev/null 2>&1 && rustup update || brew upgrade rust
+        windows:
+          - rustup update
+        default:
+          - rustup update
+      uninstall:
+        ubuntu:
+          - command -v rustup >/dev/null 2>&1 && rustup self uninstall -y || sudo apt-get remove -y cargo
+        fedora:
+          - command -v rustup >/dev/null 2>&1 && rustup self uninstall -y || sudo dnf remove -y cargo
+        arch:
+          - command -v rustup >/dev/null 2>&1 && rustup self uninstall -y || sudo pacman -Rns --noconfirm rust
+        macos:
+          - command -v rustup >/dev/null 2>&1 && rustup self uninstall -y || brew uninstall rust
+        windows:
+          - winget uninstall --id Rustlang.Rustup -e
+        default:
+          - rustup self uninstall -y
+
+  - id: go
+    name: Go
+    group: runtimes
+    description: Linguagem de programação Go (Golang)
+    check:
+      default:
+        - command -v go
+      windows:
+        - where go
+    actions:
+      install:
+        ubuntu:
+          - sudo apt-get update
+          - sudo apt-get install -y golang-go
+        fedora:
+          - sudo dnf install -y golang
+        arch:
+          - sudo pacman -S --noconfirm go
+        macos:
+          - brew install go
+        windows:
+          - winget install --id GoLang.Go -e --source winget
+      update:
+        ubuntu:
+          - sudo apt-get install --only-upgrade -y golang-go
+        fedora:
+          - sudo dnf upgrade -y golang
+        arch:
+          - sudo pacman -Syu --noconfirm go
+        macos:
+          - brew upgrade go
+        windows:
+          - winget upgrade --id GoLang.Go -e
+      uninstall:
+        ubuntu:
+          - sudo apt-get remove -y golang-go
+        fedora:
+          - sudo dnf remove -y golang
+        arch:
+          - sudo pacman -Rns --noconfirm go
+        macos:
+          - brew uninstall go
+        windows:
+          - winget uninstall --id GoLang.Go -e
+
   - id: volta
     name: Volta
     group: runtimes
