@@ -8,6 +8,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 pub enum Distro {
     Ubuntu,
     Fedora,
+    Arch,
     Macos,
     Windows,
     Unknown,
@@ -18,6 +19,7 @@ impl Distro {
         match self {
             Distro::Ubuntu => "ubuntu",
             Distro::Fedora => "fedora",
+            Distro::Arch => "arch",
             Distro::Macos => "macos",
             Distro::Windows => "windows",
             Distro::Unknown => "unknown",
@@ -34,19 +36,114 @@ pub fn detect_distro() -> Distro {
     }
 
     if let Ok(content) = std::fs::read_to_string("/etc/os-release") {
-        let fields = parse_os_release(&content);
-        let id = fields.get("ID").map(String::as_str).unwrap_or("");
-        let id_like = fields.get("ID_LIKE").map(String::as_str).unwrap_or("");
-
-        let is_ubuntu = |s: &str| s.split_whitespace().any(|w| matches!(w, "ubuntu" | "debian"));
-        if is_ubuntu(id) || is_ubuntu(id_like) {
-            return Distro::Ubuntu;
+        let distro = detect_distro_from_os_release(&content);
+        if distro != Distro::Unknown {
+            return distro;
         }
+    }
 
-        let is_fedora = |s: &str| s.split_whitespace().any(|w| matches!(w, "fedora" | "rhel"));
-        if is_fedora(id) || is_fedora(id_like) {
-            return Distro::Fedora;
-        }
+    if std::path::Path::new("/etc/debian_version").exists() {
+        return Distro::Ubuntu;
+    }
+    if std::path::Path::new("/etc/fedora-release").exists()
+        || std::path::Path::new("/etc/redhat-release").exists()
+    {
+        return Distro::Fedora;
+    }
+    if std::path::Path::new("/etc/arch-release").exists() {
+        return Distro::Arch;
+    }
+
+    Distro::Unknown
+}
+
+fn detect_distro_from_os_release(content: &str) -> Distro {
+    let fields = parse_os_release(content);
+    let id = fields.get("ID").map(String::as_str).unwrap_or("");
+    let id_like = fields.get("ID_LIKE").map(String::as_str).unwrap_or("");
+
+    let is_ubuntu = |s: &str| {
+        s.split_whitespace().any(|w| {
+            matches!(
+                w.to_ascii_lowercase().as_str(),
+                "ubuntu"
+                    | "debian"
+                    | "linuxmint"
+                    | "pop"
+                    | "elementary"
+                    | "zorin"
+                    | "kali"
+                    | "parrot"
+                    | "mx"
+                    | "deepin"
+                    | "raspbian"
+                    | "neon"
+                    | "tuxedo"
+                    | "devuan"
+                    | "pureos"
+                    | "lmde"
+                    | "trisquel"
+                    | "bodhi"
+                    | "peppermint"
+                    | "antix"
+                    | "tails"
+                    | "proxmox"
+                    | "pika"
+            )
+        })
+    };
+    if is_ubuntu(id) || is_ubuntu(id_like) {
+        return Distro::Ubuntu;
+    }
+
+    let is_fedora = |s: &str| {
+        s.split_whitespace().any(|w| {
+            matches!(
+                w.to_ascii_lowercase().as_str(),
+                "fedora"
+                    | "rhel"
+                    | "centos"
+                    | "rocky"
+                    | "almalinux"
+                    | "ol"
+                    | "nobara"
+                    | "ultramarine"
+                    | "bazzite"
+                    | "bluefin"
+                    | "aurora"
+                    | "amzn"
+                    | "amazon"
+                    | "scientific"
+                    | "clearos"
+                    | "eurolinux"
+                    | "miraclelinux"
+            )
+        })
+    };
+    if is_fedora(id) || is_fedora(id_like) {
+        return Distro::Fedora;
+    }
+
+    let is_arch = |s: &str| {
+        s.split_whitespace().any(|w| {
+            matches!(
+                w.to_ascii_lowercase().as_str(),
+                "arch"
+                    | "archlinux"
+                    | "manjaro"
+                    | "endeavouros"
+                    | "cachyos"
+                    | "garuda"
+                    | "artix"
+                    | "arcolinux"
+                    | "archcraft"
+                    | "steamos"
+                    | "omarchy"
+            )
+        })
+    };
+    if is_arch(id) || is_arch(id_like) {
+        return Distro::Arch;
     }
 
     Distro::Unknown
@@ -61,7 +158,10 @@ fn parse_os_release(content: &str) -> HashMap<String, String> {
                 return None;
             }
             let (k, v) = line.split_once('=')?;
-            Some((k.to_string(), v.trim_matches('"').to_string()))
+            Some((
+                k.trim().to_string(),
+                v.trim().trim_matches(|c| c == '"' || c == '\'').to_string(),
+            ))
         })
         .collect()
 }
@@ -188,7 +288,7 @@ pub fn resolve_status(app: &AppConfig, distro: &Distro) -> AppStatus {
             app: app.clone(),
             supported: false,
             installed: false,
-            message: format!("Sem comandos para {}.", distro.as_str()),
+            message: format!("No commands for {}.", distro.as_str()),
         };
     }
 
@@ -739,5 +839,96 @@ mod tests {
         assert_eq!(codes.get(&1), Some(&0));
         assert_eq!(codes.get(&2), Some(&42));
         assert_eq!(codes.len(), 2);
+    }
+
+    #[test]
+    fn detect_distro_recognizes_ubuntu_debian_and_derivatives() {
+        assert_eq!(
+            detect_distro_from_os_release("NAME=\"Ubuntu\"\nID=ubuntu\nID_LIKE=debian\n"),
+            Distro::Ubuntu
+        );
+        assert_eq!(
+            detect_distro_from_os_release("NAME=\"Debian GNU/Linux\"\nID=debian\n"),
+            Distro::Ubuntu
+        );
+        assert_eq!(
+            detect_distro_from_os_release(
+                "NAME=\"Linux Mint\"\nID=linuxmint\nID_LIKE=\"ubuntu debian\"\n"
+            ),
+            Distro::Ubuntu
+        );
+        assert_eq!(
+            detect_distro_from_os_release("NAME=\"Pop!_OS\"\nID=pop\nID_LIKE=\"ubuntu debian\"\n"),
+            Distro::Ubuntu
+        );
+        assert_eq!(
+            detect_distro_from_os_release("NAME=\"Zorin OS\"\nID=zorin\n"),
+            Distro::Ubuntu
+        );
+        assert_eq!(
+            detect_distro_from_os_release("NAME=\"Kali GNU/Linux\"\nID=kali\nID_LIKE=debian\n"),
+            Distro::Ubuntu
+        );
+    }
+
+    #[test]
+    fn detect_distro_recognizes_fedora_rhel_and_derivatives() {
+        assert_eq!(
+            detect_distro_from_os_release("NAME=\"Fedora Linux\"\nID=fedora\n"),
+            Distro::Fedora
+        );
+        assert_eq!(
+            detect_distro_from_os_release(
+                "NAME=\"Red Hat Enterprise Linux\"\nID=\"rhel\"\nID_LIKE=\"fedora\"\n"
+            ),
+            Distro::Fedora
+        );
+        assert_eq!(
+            detect_distro_from_os_release(
+                "NAME=\"Rocky Linux\"\nID=\"rocky\"\nID_LIKE=\"rhel centos fedora\"\n"
+            ),
+            Distro::Fedora
+        );
+        assert_eq!(
+            detect_distro_from_os_release(
+                "NAME=\"AlmaLinux\"\nID=\"almalinux\"\nID_LIKE=\"rhel centos fedora\"\n"
+            ),
+            Distro::Fedora
+        );
+        assert_eq!(
+            detect_distro_from_os_release("NAME=\"Nobara Linux\"\nID=nobara\nID_LIKE=fedora\n"),
+            Distro::Fedora
+        );
+        assert_eq!(
+            detect_distro_from_os_release("NAME=\"Bazzite\"\nID=bazzite\n"),
+            Distro::Fedora
+        );
+    }
+
+    #[test]
+    fn detect_distro_recognizes_arch_and_derivatives() {
+        assert_eq!(
+            detect_distro_from_os_release("NAME=\"Arch Linux\"\nID=arch\n"),
+            Distro::Arch
+        );
+        assert_eq!(
+            detect_distro_from_os_release("NAME=\"Manjaro Linux\"\nID=manjaro\nID_LIKE=arch\n"),
+            Distro::Arch
+        );
+        assert_eq!(
+            detect_distro_from_os_release(
+                "NAME=\"EndeavourOS\"\nID=\"endeavouros\"\nID_LIKE=\"arch\"\n"
+            ),
+            Distro::Arch
+        );
+        assert_eq!(
+            detect_distro_from_os_release("NAME=\"CachyOS\"\nID=cachyos\nID_LIKE=\"archlinux\"\n"),
+            Distro::Arch
+        );
+        assert_eq!(
+            detect_distro_from_os_release("NAME=\"Garuda Linux\"\nID=garuda\nID_LIKE='arch'\n"),
+            Distro::Arch
+        );
+        assert_eq!(Distro::Arch.as_str(), "arch");
     }
 }

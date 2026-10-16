@@ -33,6 +33,8 @@ apps:
     check:
       default:
         - command -v google-chrome
+      arch:
+        - command -v google-chrome-stable || command -v google-chrome
       windows:
         - where chrome
     actions:
@@ -46,6 +48,8 @@ apps:
           - wget -q -O google-chrome-stable_current_x86_64.rpm https://dl.google.com/linux/direct/google-chrome-stable_current_x86_64.rpm
           - sudo dnf install google-chrome-stable_current_x86_64.rpm -y
           - rm google-chrome-stable_current_x86_64.rpm
+        arch:
+          - yay -S --noconfirm google-chrome
         macos:
           - brew install --cask google-chrome
         windows:
@@ -60,6 +64,8 @@ apps:
           - wget -q -O google-chrome-stable_current_x86_64.rpm https://dl.google.com/linux/direct/google-chrome-stable_current_x86_64.rpm
           - sudo dnf install google-chrome-stable_current_x86_64.rpm -y
           - rm google-chrome-stable_current_x86_64.rpm
+        arch:
+          - yay -Syu --noconfirm google-chrome
         macos:
           - brew upgrade --cask google-chrome
         windows:
@@ -69,6 +75,8 @@ apps:
           - sudo apt remove google-chrome-stable -y
         fedora:
           - sudo dnf remove google-chrome-stable -y
+        arch:
+          - yay -Rns --noconfirm google-chrome
         macos:
           - brew uninstall --cask google-chrome
         windows:
@@ -82,16 +90,32 @@ apps:
         - command -v dbeaver
     actions:
       install:
+        ubuntu:
+          - curl -L -o dbeaver-ce_latest_amd64.deb https://dbeaver.io/files/dbeaver-ce_latest_amd64.deb
+          - sudo apt-get install ./dbeaver-ce_latest_amd64.deb -y
+          - rm -f dbeaver-ce_latest_amd64.deb
         fedora:
           - curl -L -o dbeaver-ce-latest-stable.x86_64.rpm https://dbeaver.io/files/dbeaver-ce-latest-stable.x86_64.rpm
           - sudo dnf install ./dbeaver-ce-latest-stable.x86_64.rpm -y
+        arch:
+          - sudo pacman -S --noconfirm dbeaver
       update:
+        ubuntu:
+          - curl -L -o dbeaver-ce_latest_amd64.deb https://dbeaver.io/files/dbeaver-ce_latest_amd64.deb
+          - sudo apt-get install ./dbeaver-ce_latest_amd64.deb -y
+          - rm -f dbeaver-ce_latest_amd64.deb
         fedora:
           - curl -L -o dbeaver-ce-latest-stable.x86_64.rpm https://dbeaver.io/files/dbeaver-ce-latest-stable.x86_64.rpm
           - sudo dnf install ./dbeaver-ce-latest-stable.x86_64.rpm -y
+        arch:
+          - sudo pacman -Syu --noconfirm dbeaver
       uninstall:
+        ubuntu:
+          - sudo apt-get remove dbeaver-ce -y
         fedora:
           - sudo dnf remove dbeaver-ce -y
+        arch:
+          - sudo pacman -Rns --noconfirm dbeaver
   - id: terra-release
     name: Terra Repository
     group: repos
@@ -122,6 +146,25 @@ apps:
         fedora:
           - sudo dnf remove -y rpmfusion-free-release rpmfusion-nonfree-release
 
+  - id: yay
+    name: Yay (AUR Helper)
+    group: repos
+    description: Helper para o Arch User Repository (AUR)
+    check:
+      arch:
+        - command -v yay
+    actions:
+      install:
+        arch:
+          - sudo pacman -S --needed --noconfirm git base-devel
+          - rm -rf /tmp/yay-bin && git clone https://aur.archlinux.org/yay-bin.git /tmp/yay-bin && (cd /tmp/yay-bin && makepkg -si --noconfirm) && rm -rf /tmp/yay-bin
+      update:
+        arch:
+          - yay -Syu --noconfirm
+      uninstall:
+        arch:
+          - sudo pacman -Rns --noconfirm yay-bin || sudo pacman -Rns --noconfirm yay
+
   # ── SHELL ──────────────────────────────────────────────────────────────────
 
   - id: fish
@@ -139,6 +182,9 @@ apps:
         ubuntu:
           - sudo apt install fish -y
           - chsh -s $(which fish)
+        arch:
+          - sudo pacman -S --noconfirm fish
+          - chsh -s $(which fish)
         macos:
           - brew install fish
           - chsh -s $(which fish)
@@ -147,6 +193,8 @@ apps:
           - sudo dnf upgrade -y fish
         ubuntu:
           - sudo apt upgrade -y fish
+        arch:
+          - sudo pacman -Syu --noconfirm fish
         macos:
           - brew upgrade fish
       uninstall:
@@ -154,6 +202,8 @@ apps:
           - sudo dnf remove -y fish
         ubuntu:
           - sudo apt remove fish -y
+        arch:
+          - sudo pacman -Rns --noconfirm fish
         macos:
           - brew uninstall fish
 
@@ -228,12 +278,18 @@ apps:
         fedora: 
           - sudo dnf copr enable sneexy/zen-browser -y
           - sudo dnf install zen-browser -y
+        arch:
+          - yay -S --noconfirm zen-browser-bin
       update:
         fedora:
           - sudo dnf upgrade zen-browser -y
+        arch:
+          - yay -Syu --noconfirm zen-browser-bin
       uninstall:
         fedora:
           - sudo dnf remove zen-browser -y
+        arch:
+          - yay -Rns --noconfirm zen-browser-bin
 
   # ── DEV TOOLS ──────────────────────────────────────────────────────────────
   - id: gitkraken
@@ -245,14 +301,30 @@ apps:
         - command -v gitkraken
     actions:
       install:
+        ubuntu:
+          - curl -L -o gitkraken-amd64.deb https://release.gitkraken.com/linux/gitkraken-amd64.deb
+          - sudo apt-get install ./gitkraken-amd64.deb -y
+          - rm -f gitkraken-amd64.deb
         fedora:
           - sudo dnf install https://release.gitkraken.com/linux/gitkraken-amd64.rpm -y
+        arch:
+          - yay -S --noconfirm gitkraken
       update:
+        ubuntu:
+          - curl -L -o gitkraken-amd64.deb https://release.gitkraken.com/linux/gitkraken-amd64.deb
+          - sudo apt-get install ./gitkraken-amd64.deb -y
+          - rm -f gitkraken-amd64.deb
         fedora:
           - sudo dnf upgrade https://release.gitkraken.com/linux/gitkraken-amd64.rpm -y
+        arch:
+          - yay -Syu --noconfirm gitkraken
       uninstall:
+        ubuntu:
+          - sudo apt-get remove gitkraken -y
         fedora:
           - sudo dnf remove gitkraken -y
+        arch:
+          - yay -Rns --noconfirm gitkraken
 
   - id: git
     name: Git
@@ -270,6 +342,8 @@ apps:
           - sudo apt-get install -y git
         fedora:
           - sudo dnf install -y git
+        arch:
+          - sudo pacman -S --noconfirm git
         macos:
           - brew install git
         windows:
@@ -279,6 +353,8 @@ apps:
           - sudo apt-get install --only-upgrade -y git
         fedora:
           - sudo dnf upgrade -y git
+        arch:
+          - sudo pacman -Syu --noconfirm git
         macos:
           - brew upgrade git
         windows:
@@ -288,6 +364,8 @@ apps:
           - sudo apt-get remove -y git
         fedora:
           - sudo dnf remove -y git
+        arch:
+          - sudo pacman -Rns --noconfirm git
         macos:
           - brew uninstall git
         windows:
@@ -306,6 +384,8 @@ apps:
           - sudo apt install build-essential -y
         fedora:
           - sudo dnf install @development-tools -y
+        arch:
+          - sudo pacman -S --needed --noconfirm base-devel
         macos:
           - xcode-select --install
       uninstall:
@@ -313,6 +393,8 @@ apps:
           - sudo apt remove build-essential -y
         fedora:
           - sudo dnf group remove -y development-tools
+        arch:
+          - sudo pacman -Rns --noconfirm base-devel
         macos:
           - xcode-select --uninstall
           
@@ -335,6 +417,8 @@ apps:
           - sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
           - echo -e "[code]\nname=Visual Studio Code\nbaseurl=https://packages.microsoft.com/yumrepos/vscode\nenabled=1\nautorefresh=1\ntype=rpm-md\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc" | sudo tee /etc/yum.repos.d/vscode.repo > /dev/null
           - sudo dnf install code
+        arch:
+          - yay -S --noconfirm visual-studio-code-bin
         macos:
           - brew install --cask visual-studio-code
         windows:
@@ -344,6 +428,8 @@ apps:
           - sudo snap refresh code
         fedora:
           - sudo dnf upgrade -y code
+        arch:
+          - yay -Syu --noconfirm visual-studio-code-bin
         macos:
           - brew upgrade --cask visual-studio-code
         windows:
@@ -353,6 +439,8 @@ apps:
           - sudo snap remove code
         fedora:
           - sudo dnf remove -y code
+        arch:
+          - yay -Rns --noconfirm visual-studio-code-bin
         macos:
           - brew uninstall --cask visual-studio-code
         windows:
@@ -368,13 +456,27 @@ apps:
         - command -v agy
     actions:
       install:
+        ubuntu:
+          - curl -fsSL https://antigravity.google/cli/install.sh | bash
         fedora:
           - curl -fsSL https://antigravity.google/cli/install.sh | bash
+        arch:
+          - curl -fsSL https://antigravity.google/cli/install.sh | bash
       update:
+        ubuntu:
+          - curl -fsSL https://antigravity.google/cli/install.sh
         fedora:
           - curl -fsSL https://antigravity.google/cli/install.sh
+        arch:
+          - curl -fsSL https://antigravity.google/cli/install.sh
       uninstall:
+        ubuntu:
+          - rm -rf ~/.local/bin/ag ~/.local/bin/agy
+          - rm -rf ~/.antigravity-server ~/.antigravity
         fedora:
+          - rm -rf ~/.local/bin/ag ~/.local/bin/agy
+          - rm -rf ~/.antigravity-server ~/.antigravity
+        arch:
           - rm -rf ~/.local/bin/ag ~/.local/bin/agy
           - rm -rf ~/.antigravity-server ~/.antigravity
 
@@ -386,13 +488,25 @@ apps:
         - command -v claude
     actions:
       install:
+        ubuntu:
+          - npm i -g @anthropic-ai/claude-code
         fedora:
           - npm i -g @anthropic-ai/claude-code
+        arch:
+          - npm i -g @anthropic-ai/claude-code
       update:
+        ubuntu:
+          - npm i -g @anthropic-ai/claude-code@latest
         fedora:
           - npm i -g @anthropic-ai/claude-code@latest
+        arch:
+          - npm i -g @anthropic-ai/claude-code@latest
       uninstall:
+        ubuntu:
+          - npm uninstall -g @anthropic-ai/claude-code
         fedora:
+          - npm uninstall -g @anthropic-ai/claude-code
+        arch:
           - npm uninstall -g @anthropic-ai/claude-code
 
   - id: OpenAI Codex
@@ -403,13 +517,25 @@ apps:
         - command -v codex
     actions:
       install:
+        ubuntu:
+          - npm i -g @openai/codex
         fedora:
           - npm i -g @openai/codex
+        arch:
+          - npm i -g @openai/codex
       update:
+        ubuntu:
+          - npm i -g @openai/codex@latest
         fedora:
           - npm i -g @openai/codex@latest
+        arch:
+          - npm i -g @openai/codex@latest
       uninstall:
+        ubuntu:
+          - npm uninstall -g @openai/codex
         fedora:
+          - npm uninstall -g @openai/codex
+        arch:
           - npm uninstall -g @openai/codex
 
   # ── RUNTIMES ───────────────────────────────────────────────────────────────
@@ -579,18 +705,38 @@ apps:
         - command -v docker
     actions:
       install:
+        ubuntu:
+          - curl -fsSL https://get.docker.com | sudo sh
+          - sudo systemctl enable --now docker
+          - sudo groupadd docker || true
+          - sudo usermod -aG docker $USER
         fedora:
           - sudo dnf config-manager addrepo --from-repofile https://download.docker.com/linux/fedora/docker-ce.repo
           - sudo dnf install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin -y
           - sudo systemctl enable --now docker
           - sudo groupadd docker || true
           - sudo usermod -aG docker $USER
+        arch:
+          - sudo pacman -S --noconfirm docker docker-buildx docker-compose
+          - sudo systemctl enable --now docker
+          - sudo groupadd docker || true
+          - sudo usermod -aG docker $USER
       update:
+        ubuntu:
+          - sudo apt-get update && sudo apt-get install --only-upgrade -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
         fedora:
           - sudo dnf upgrade -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+        arch:
+          - sudo pacman -Syu --noconfirm docker docker-buildx docker-compose
       uninstall:
+        ubuntu:
+          - sudo apt-get remove -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+          - sudo systemctl disable --now docker || true
         fedora:
           - sudo dnf remove -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+          - sudo systemctl disable --now docker || true
+        arch:
+          - sudo pacman -Rns --noconfirm docker docker-buildx docker-compose
           - sudo systemctl disable --now docker || true
 
   - id: docker-network-config
@@ -639,6 +785,8 @@ apps:
           - sudo apt-get install -y thunderbird
         fedora:
           - sudo dnf install -y thunderbird
+        arch:
+          - sudo pacman -S --noconfirm thunderbird
         windows:
           - winget install --id Mozilla.Thunderbird -e --source winget
       update:
@@ -646,6 +794,8 @@ apps:
           - sudo apt-get install --only-upgrade -y thunderbird
         fedora:
           - sudo dnf upgrade -y thunderbird
+        arch:
+          - sudo pacman -Syu --noconfirm thunderbird
         windows:
           - winget upgrade --id Mozilla.Thunderbird -e
       uninstall:
@@ -653,6 +803,8 @@ apps:
           - sudo apt-get remove -y thunderbird
         fedora:
           - sudo dnf remove -y thunderbird
+        arch:
+          - sudo pacman -Rns --noconfirm thunderbird
         windows:
           - winget uninstall --id Mozilla.Thunderbird -e
 
@@ -665,14 +817,26 @@ apps:
         - command -v vlc
     actions:
       install:
+        ubuntu:
+          - sudo apt-get install -y vlc
         fedora:
           - sudo dnf install vlc -y
+        arch:
+          - sudo pacman -S --noconfirm vlc
       update:
+        ubuntu:
+          - sudo apt-get install --only-upgrade -y vlc
         fedora:
           - sudo dnf upgrade -y vlc
+        arch:
+          - sudo pacman -Syu --noconfirm vlc
       uninstall:
+        ubuntu:
+          - sudo apt-get remove -y vlc
         fedora:
           - sudo dnf remove -y vlc
+        arch:
+          - sudo pacman -Rns --noconfirm vlc
 
   - id: obs-studio
     name: OBS Studio
@@ -683,14 +847,26 @@ apps:
         - command -v obs
     actions:
       install:
+        ubuntu:
+          - sudo apt-get install -y obs-studio
         fedora:
           - sudo dnf install obs-studio -y
+        arch:
+          - sudo pacman -S --noconfirm obs-studio
       update:
+        ubuntu:
+          - sudo apt-get install --only-upgrade -y obs-studio
         fedora:
           - sudo dnf upgrade -y obs-studio
+        arch:
+          - sudo pacman -Syu --noconfirm obs-studio
       uninstall:
+        ubuntu:
+          - sudo apt-get remove -y obs-studio
         fedora:
           - sudo dnf remove -y obs-studio
+        arch:
+          - sudo pacman -Rns --noconfirm obs-studio
 
   - id: qbittorrent
     name: qBittorrent
@@ -701,14 +877,26 @@ apps:
         - command -v qbittorrent
     actions:
       install:
+        ubuntu:
+          - sudo apt-get install -y qbittorrent
         fedora:
           - sudo dnf install qbittorrent -y
+        arch:
+          - sudo pacman -S --noconfirm qbittorrent
       update:
+        ubuntu:
+          - sudo apt-get install --only-upgrade -y qbittorrent
         fedora:
           - sudo dnf upgrade -y qbittorrent
+        arch:
+          - sudo pacman -Syu --noconfirm qbittorrent
       uninstall:
+        ubuntu:
+          - sudo apt-get remove -y qbittorrent
         fedora:
           - sudo dnf remove -y qbittorrent
+        arch:
+          - sudo pacman -Rns --noconfirm qbittorrent
 
   - id: discord
     name: Discord
@@ -721,14 +909,30 @@ apps:
         - command -v discord
     actions:
       install:
+        ubuntu:
+          - curl -L -o discord.deb "https://discord.com/api/download?platform=linux&format=deb"
+          - sudo apt-get install ./discord.deb -y
+          - rm -f discord.deb
         fedora:
           - sudo dnf install discord -y
+        arch:
+          - sudo pacman -S --noconfirm discord
       update:
+        ubuntu:
+          - curl -L -o discord.deb "https://discord.com/api/download?platform=linux&format=deb"
+          - sudo apt-get install ./discord.deb -y
+          - rm -f discord.deb
         fedora:
           - sudo dnf upgrade -y discord
+        arch:
+          - sudo pacman -Syu --noconfirm discord
       uninstall:
+        ubuntu:
+          - sudo apt-get remove -y discord
         fedora:
           - sudo dnf remove -y discord
+        arch:
+          - sudo pacman -Rns --noconfirm discord
 
   - id: steam
     name: Steam
@@ -747,6 +951,8 @@ apps:
           - sudo dnf install steam -y
         ubuntu:
           - sudo apt-get update && sudo apt-get install -y steam
+        arch:
+          - sudo pacman -S --noconfirm steam
         macos:
           - brew install --cask steam
         windows:
@@ -756,6 +962,8 @@ apps:
           - sudo dnf upgrade -y steam
         ubuntu:
           - sudo apt-get install --only-upgrade -y steam
+        arch:
+          - sudo pacman -Syu --noconfirm steam
         macos:
           - brew upgrade --cask steam
         windows:
@@ -765,6 +973,8 @@ apps:
           - sudo dnf remove -y steam
         ubuntu:
           - sudo apt-get remove -y steam
+        arch:
+          - sudo pacman -Rns --noconfirm steam
         macos:
           - brew uninstall --cask steam
         windows:
@@ -776,25 +986,41 @@ apps:
     description: Cliente SSH multiplataforma
     check:
       default:
-        - test -f /opt/Termius/termius-app
+        - test -f /opt/Termius/termius-app || command -v termius
       windows:
         - where termius
     actions:
       install:
+        ubuntu:
+          - curl -L -o Termius.deb https://www.termius.com/download/linux/Termius.deb
+          - sudo apt-get install ./Termius.deb -y
+          - rm -f Termius.deb
         fedora:
           - sudo dnf copr enable fatgrizzly/termius -y
           - sudo dnf install termius-app -y
+        arch:
+          - yay -S --noconfirm termius
         windows:
           - winget install Termius.Termius
       update:
+        ubuntu:
+          - curl -L -o Termius.deb https://www.termius.com/download/linux/Termius.deb
+          - sudo apt-get install ./Termius.deb -y
+          - rm -f Termius.deb
         fedora:
           - sudo dnf upgrade -y termius-app
+        arch:
+          - yay -Syu --noconfirm termius
         windows:
           - winget upgrade Termius.Termius
       uninstall:
+        ubuntu:
+          - sudo apt-get remove -y termius-app
         fedora:
           - sudo dnf remove -y termius-app
           - sudo dnf copr disable fatgrizzly/termius
+        arch:
+          - yay -Rns --noconfirm termius
         windows:
           - winget uninstall Termius.Termius
 

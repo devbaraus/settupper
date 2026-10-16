@@ -206,16 +206,27 @@ fn parse_action_map(val: Option<&serde_yaml::Value>) -> HashMap<String, Vec<Stri
             let mut result = HashMap::new();
             for (k, v) in mapping {
                 let Some(key) = k.as_str() else { continue };
-                // Handle legacy "installed" key
-                let key = if key == "installed" { "default" } else { key };
+                let key = normalize_distro_key(key);
                 let cmds = parse_string_list(v);
                 if !cmds.is_empty() {
-                    result.insert(key.to_string(), cmds);
+                    result.entry(key.to_string()).or_insert(cmds);
                 }
             }
             result
         }
         _ => HashMap::new(),
+    }
+}
+
+fn normalize_distro_key(key: &str) -> &str {
+    match key {
+        "installed" => "default",
+        "debian" | "linuxmint" | "mint" | "pop" | "elementary" | "zorin" | "kali" => "ubuntu",
+        "rhel" | "centos" | "rocky" | "almalinux" | "nobara" | "bazzite" | "ultramarine" => {
+            "fedora"
+        }
+        "archlinux" | "manjaro" | "endeavouros" | "cachyos" | "garuda" | "artix" => "arch",
+        _ => key,
     }
 }
 
@@ -405,5 +416,60 @@ apps:
         .expect("parse remote json");
 
         assert_eq!(config.apps[0].name, "Remote JSON");
+    }
+
+    #[test]
+    fn parse_config_supports_distro_aliases_and_validates_repo_packages_yaml() {
+        let config = parse_config(
+            r#"
+apps:
+  - name: Multi Distro App
+    install:
+      debian:
+        - sudo apt-get install -y git
+      rhel:
+        - sudo dnf install -y git
+      archlinux:
+        - sudo pacman -S --noconfirm git
+    update:
+      linuxmint:
+        - sudo apt-get upgrade -y git
+      rocky:
+        - sudo dnf upgrade -y git
+      arch:
+        - sudo pacman -Syu --noconfirm git
+"#,
+            "packages.yaml",
+        )
+        .expect("parse alias config");
+
+        let app = &config.apps[0];
+        assert_eq!(
+            app.install.get("ubuntu"),
+            Some(&vec!["sudo apt-get install -y git".to_string()])
+        );
+        assert_eq!(
+            app.install.get("fedora"),
+            Some(&vec!["sudo dnf install -y git".to_string()])
+        );
+        assert_eq!(
+            app.install.get("arch"),
+            Some(&vec!["sudo pacman -S --noconfirm git".to_string()])
+        );
+        assert_eq!(
+            app.update.get("ubuntu"),
+            Some(&vec!["sudo apt-get upgrade -y git".to_string()])
+        );
+        assert_eq!(
+            app.update.get("fedora"),
+            Some(&vec!["sudo dnf upgrade -y git".to_string()])
+        );
+        assert_eq!(
+            app.update.get("arch"),
+            Some(&vec!["sudo pacman -Syu --noconfirm git".to_string()])
+        );
+
+        let root_config = load_config(Path::new("packages.yaml")).expect("load root packages.yaml");
+        assert!(!root_config.apps.is_empty());
     }
 }
