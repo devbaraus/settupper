@@ -8,6 +8,25 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use tokio::sync::mpsc::UnboundedSender;
 
+pub fn spawn_version_check(event_tx: UnboundedSender<AppEvent>) {
+    tokio::task::spawn_blocking(move || {
+        let event = match crate::updates::check_latest(
+            crate::updates::LATEST_RELEASE_API,
+            env!("CARGO_PKG_VERSION"),
+        ) {
+            Ok(Some(version)) => AppEvent::UpdateAvailable(version.to_string()),
+            Ok(None) => AppEvent::CommandOutput(format!(
+                "# Settupper v{} is up to date",
+                env!("CARGO_PKG_VERSION")
+            )),
+            Err(error) => AppEvent::CommandOutput(format!(
+                "# Could not check for Settupper updates: {error}"
+            )),
+        };
+        let _ = event_tx.send(event);
+    });
+}
+
 pub fn spawn_refresh_all(
     config: PackageConfig,
     distro: Distro,

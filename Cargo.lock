@@ -1658,7 +1658,7 @@ dependencies = [
 
 [[package]]
 name = "settupper"
-version = "0.1.6"
+version = "0.1.8"
 dependencies = [
  "anyhow",
  "chrono",
@@ -1667,6 +1667,7 @@ dependencies = [
  "dirs",
  "ratatui",
  "regex",
+ "semver",
  "serde",
  "serde_json",
  "serde_yaml",

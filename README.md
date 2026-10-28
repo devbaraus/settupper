@@ -20,6 +20,7 @@ Settupper is a terminal application (TUI) that reads a `YAML` or `JSON` file wit
 ## Features
 
 - **Interactive TUI** with list, details, and real-time log panels
+- **Startup version check** against the latest GitHub release, with a prominent yellow update banner and releases link, also recorded in the log. Runs in the background; offline or failed checks do not interrupt use.
 - **Cross-platform**: Ubuntu/Debian, Fedora/RHEL, Arch Linux (and their derivatives), macOS, Windows
 - **Actions**: install, update, uninstall, smart (decides automatically)
 - **Smart All**: installs/updates everything at once while respecting app dependencies

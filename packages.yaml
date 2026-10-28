@@ -26,6 +26,32 @@ groups:
     name: Navegadores
 
 apps:
+  - id: settupper
+    name: Settupper
+    group: cli
+    description: Gerenciador declarativo de pacotes com interface de terminal
+    check:
+      default:
+        - command -v settupper || test -x "${SETTUPPER_INSTALL_ROOT:-$HOME/.local}/bin/settupper"
+      windows:
+        - where settupper || if exist "%LOCALAPPDATA%\Programs\settupper\bin\settupper.exe" (exit /b 0) else (exit /b 1)
+    actions:
+      install:
+        default:
+          - curl -fsSL https://raw.githubusercontent.com/devbaraus/settupper/main/install.sh | sh
+        windows:
+          - powershell -NoProfile -ExecutionPolicy Bypass -Command "irm https://raw.githubusercontent.com/devbaraus/settupper/main/install.ps1 | iex"
+      update:
+        default:
+          - curl -fsSL https://raw.githubusercontent.com/devbaraus/settupper/main/install.sh | sh
+        windows:
+          - powershell -NoProfile -ExecutionPolicy Bypass -Command "irm https://raw.githubusercontent.com/devbaraus/settupper/main/install.ps1 | iex"
+      uninstall:
+        default:
+          - rm -f "${SETTUPPER_INSTALL_ROOT:-$HOME/.local}/bin/settupper"
+        windows:
+          - if exist "%LOCALAPPDATA%\Programs\settupper\bin\settupper.exe" del /F /Q "%LOCALAPPDATA%\Programs\settupper\bin\settupper.exe"
+
   - id: chrome
     name: Google Chrome
     group: browser

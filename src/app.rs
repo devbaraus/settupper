@@ -35,6 +35,7 @@ pub enum Screen {
 
 #[derive(Debug)]
 pub enum AppEvent {
+    UpdateAvailable(String),
     StatusesLoaded(Vec<AppStatus>),
     CommandOutput(String),
     ActionFinished { index: usize, success: bool, reboot: bool },
@@ -47,6 +48,7 @@ pub struct AppState {
     pub config_path: String,
     pub distro: Distro,
     pub dry_run: bool,
+    pub available_version: Option<String>,
 
     pub statuses: Vec<AppStatus>,
     pub visible_indices: Vec<usize>,
@@ -79,6 +81,7 @@ impl AppState {
             config_path,
             distro,
             dry_run,
+            available_version: None,
             statuses: Vec::new(),
             visible_indices,
             selected_indices: HashSet::new(),

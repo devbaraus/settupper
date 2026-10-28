@@ -248,6 +248,14 @@ fn build_snapshot(state: &AppState) -> Snapshot {
 
 pub fn handle_app_event(state: &mut AppState, event: AppEvent) {
     match event {
+        AppEvent::UpdateAvailable(version) => {
+            state.push_log(format!(
+                "# Settupper v{version} available (current: v{}): {}",
+                env!("CARGO_PKG_VERSION"),
+                crate::updates::RELEASES_URL
+            ));
+            state.available_version = Some(version);
+        }
         AppEvent::StatusesLoaded(statuses) => {
             state.statuses = statuses;
             state.busy = false;
@@ -369,6 +377,42 @@ mod tests {
 
         assert!(!quit);
         assert_eq!(state.screen, Screen::Main);
+    }
+
+    #[test]
+    fn update_notice_preserves_running_work_and_renders_banner() {
+        let mut state = state();
+        state.busy = true;
+
+        handle_app_event(&mut state, AppEvent::UpdateAvailable("0.1.10".to_string()));
+
+        assert!(state.busy);
+        assert_eq!(state.available_version.as_deref(), Some("0.1.10"));
+        assert!(state.log_lines.last().unwrap().contains(crate::updates::RELEASES_URL));
+
+        let backend = ratatui::backend::TestBackend::new(120, 30);
+        let mut terminal = ratatui::Terminal::new(backend).unwrap();
+        terminal.draw(|frame| crate::ui::render(frame, &state)).unwrap();
+        let header: String = (0..120)
+            .map(|x| terminal.backend().buffer()[(x, 0)].symbol())
+            .collect();
+        assert!(header.contains(concat!("SETTUPPER v", env!("CARGO_PKG_VERSION"))));
+        let buffer = terminal.backend().buffer();
+        let banner: String = (1..5)
+            .flat_map(|y| (0..120).map(move |x| buffer[(x, y)].symbol()))
+            .collect();
+        assert!(banner.contains("UPDATE AVAILABLE"));
+        assert!(banner.contains("Settupper v0.1.10 is available!"));
+        assert!(banner.contains(crate::updates::RELEASES_URL));
+        assert_eq!(buffer[(1, 2)].bg, ratatui::style::Color::Yellow);
+
+        state.available_version = None;
+        terminal.draw(|frame| crate::ui::render(frame, &state)).unwrap();
+        let buffer = terminal.backend().buffer();
+        let screen: String = (0..30)
+            .flat_map(|y| (0..120).map(move |x| buffer[(x, y)].symbol()))
+            .collect();
+        assert!(!screen.contains("UPDATE AVAILABLE"));
     }
 
     #[test]

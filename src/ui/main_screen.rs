@@ -12,26 +12,39 @@ use super::helpers::{status_label, smart_action_label};
 pub fn render(frame: &mut Frame, state: &AppState) {
     let area = frame.area();
 
-    // Header + body + footer layout
+    // Header + update banner + body + footer layout
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
             Constraint::Length(1), // header
+            Constraint::Length(if state.available_version.is_some() { 4 } else { 0 }),
             Constraint::Min(0),    // body
             Constraint::Length(1), // footer
         ])
         .split(area);
 
     render_header(frame, state, chunks[0]);
-    render_body(frame, state, chunks[1]);
-    render_footer(frame, chunks[2]);
+    if let Some(version) = &state.available_version {
+        let banner = Paragraph::new(vec![
+            Line::from(format!(
+                " Settupper v{version} is available! Current: v{}",
+                env!("CARGO_PKG_VERSION")
+            )),
+            Line::from(format!(" {}", crate::updates::RELEASES_URL)),
+        ])
+        .block(Block::default().borders(Borders::ALL).title(" UPDATE AVAILABLE "))
+        .style(Style::default().fg(Color::Black).bg(Color::Yellow).bold());
+        frame.render_widget(banner, chunks[1]);
+    }
+    render_body(frame, state, chunks[2]);
+    render_footer(frame, chunks[3]);
 }
 
 fn render_header(frame: &mut Frame, state: &AppState, area: Rect) {
-    let title = format!(" SETTUPPER — {} ", state.distro.as_str());
+    let title = format!(" SETTUPPER v{} — {} ", env!("CARGO_PKG_VERSION"), state.distro.as_str());
     let mode = if state.dry_run { " [DRY-RUN]" } else { "" };
     let busy = if state.busy { " ⟳" } else { "" };
-    let text = format!("{}{}{}", title, mode,  busy);
+    let text = format!("{}{}{}", title, mode, busy);
 
     let header = Paragraph::new(text)
         .style(Style::default().fg(Color::White).bg(Color::Blue));

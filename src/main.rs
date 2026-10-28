@@ -3,6 +3,7 @@ mod config;
 mod core;
 mod events;
 mod ui;
+mod updates;
 mod workers;
 
 use anyhow::{Context, Result};
@@ -17,7 +18,7 @@ use std::io;
 use std::time::Duration;
 
 #[derive(Parser)]
-#[command(name = "settupper", about = "Declarative package manager with TUI")]
+#[command(name = "settupper", version, about = "Declarative package manager with TUI")]
 struct Args {
     /// Path or URL to the configuration file (YAML/JSON)
     config: Option<String>,
@@ -47,6 +48,7 @@ async fn main() -> Result<()> {
 
     // Initial refresh
     events::start_refresh(&mut state);
+    workers::spawn_version_check(state.event_tx.clone());
 
     // Setup terminal
     enable_raw_mode()?;
