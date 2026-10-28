@@ -1,0 +1,50 @@
+version: 1
+
+groups:
+  - id: dev-tools
+    name: Development tools
+
+apps:
+  - id: git
+    name: Git
+    group: dev-tools
+    description: Version control, everywhere
+    check:
+      default:
+        - command -v git
+      windows:
+        - where git
+    actions:
+      install:
+        ubuntu:
+          - sudo apt-get install -y git
+        fedora:
+          - sudo dnf install -y git
+        arch:
+          - sudo pacman -S --noconfirm git
+        macos:
+          - brew install git
+        windows:
+          - winget install --id Git.Git -e
+      update:
+        ubuntu:
+          - sudo apt-get install --only-upgrade -y git
+        fedora:
+          - sudo dnf upgrade -y git
+        arch:
+          - sudo pacman -Syu --noconfirm git
+        macos:
+          - brew upgrade git
+        windows:
+          - winget upgrade --id Git.Git -e
+      uninstall:
+        ubuntu:
+          - sudo apt-get remove -y git
+        fedora:
+          - sudo dnf remove -y git
+        arch:
+          - sudo pacman -Rns --noconfirm git
+        macos:
+          - brew uninstall git
+        windows:
+          - winget uninstall --id Git.Git -e

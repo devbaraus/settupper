@@ -232,6 +232,8 @@ apps:
 
 ## Stack
 
+The Astro landing page lives in [`website/`](website/README.md). Run `npm ci` and `npm run dev` from that directory to work on it, or `npm run build` to generate the static site.
+
 | Lib | Usage |
 |-----|-----|
 | [Ratatui](https://github.com/ratatui-org/ratatui) | Framework TUI |

@@ -1,0 +1,19 @@
+{
+  "name": "settupper-website",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev --host 0.0.0.0",
+    "build": "astro build",
+    "preview": "astro preview --host 0.0.0.0"
+  },
+  "dependencies": {
+    "@astrojs/solid-js": "^7.1.2",
+    "@tailwindcss/vite": "^4.3.3",
+    "@tabler/icons-solidjs": "^3.50.0",
+    "astro": "^7.4.3",
+    "solid-js": "^1.9.17",
+    "tailwindcss": "^4.3.3"
+  }
+}
