@@ -426,6 +426,46 @@ apps:
           
   # ── EDITORS ────────────────────────────────────────────────────────────────
 
+  - id: ttt
+    name: TTT Editor
+    group: editors
+    description: Editor de código para o terminal
+    check:
+      default:
+        - command -v ttt || test -x "${INSTALL_DIR:-$HOME/.local/bin}/ttt"
+      windows:
+        - where ttt
+    actions:
+      install:
+        default:
+          - curl -sSfL https://raw.githubusercontent.com/eugenioenko/ttt/main/install.sh | sh
+        arch:
+          - yay -S --noconfirm ttt
+        macos:
+          - brew tap eugenioenko/ttt
+          - brew trust eugenioenko/ttt
+          - brew install ttt
+        windows:
+          - scoop install ttt
+      update:
+        default:
+          - curl -sSfL https://raw.githubusercontent.com/eugenioenko/ttt/main/install.sh | sh
+        arch:
+          - yay -S --noconfirm ttt
+        macos:
+          - brew upgrade ttt
+        windows:
+          - scoop update ttt
+      uninstall:
+        default:
+          - rm -f "${INSTALL_DIR:-$HOME/.local/bin}/ttt"
+        arch:
+          - yay -Rns --noconfirm ttt
+        macos:
+          - brew uninstall ttt
+        windows:
+          - scoop uninstall ttt
+
   - id: vscode
     name: VS Code
     group: editors
