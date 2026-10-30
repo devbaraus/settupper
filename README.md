@@ -115,6 +115,9 @@ settupper
 
 # Show what would be executed without running anything
 settupper --dry-run my-packages.yaml
+
+# Use a remote config file
+settupper https://github.com/devbaraus/settupper/blob/main/packages.yaml
 ```
 
 ---
