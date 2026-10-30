@@ -117,7 +117,7 @@ settupper
 settupper --dry-run my-packages.yaml
 
 # Use a remote config file
-settupper https://github.com/devbaraus/settupper/blob/main/packages.yaml
+settupper https://raw.githubusercontent.com/devbaraus/settupper/refs/heads/main/packages.yaml
 ```
 
 ---
