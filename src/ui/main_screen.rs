@@ -46,7 +46,7 @@ fn render_header(frame: &mut Frame, state: &AppState, area: Rect) {
     let busy = if state.busy { " ⟳" } else { "" };
     let text = format!("{}{}{}", title, mode, busy);
 
-    let header = Paragraph::new(text)
+    let header = Paragraph::new(text) 
         .style(Style::default().fg(Color::White).bg(Color::Blue));
     frame.render_widget(header, area);
 }
@@ -162,7 +162,7 @@ fn render_table(frame: &mut Frame, state: &AppState, area: Rect) {
             let status = state.statuses.get(real_idx);
             let app = &state.config.apps[real_idx];
 
-            let check_char = if is_selected { "☑" } else { "○" };
+            let check_char = if is_selected { "◆" } else { "◇" };
             let check_style = if is_selected {
                 Style::default().fg(Color::Cyan)
             } else {
@@ -175,7 +175,7 @@ fn render_table(frame: &mut Frame, state: &AppState, area: Rect) {
                 if lbl.bold {
                     style = style.bold();
                 }
-                (lbl.text.to_string(), style)
+                (lbl.text.to_string(), style) 
             } else {
                 ("...".to_string(), Style::default().fg(Color::DarkGray))
             };
