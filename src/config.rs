@@ -365,6 +365,23 @@ apps:
     }
 
     #[test]
+    fn web_preset_export_loads() {
+        let config = parse_config(
+            include_str!("../website/tests/fixtures/node-package-manager.json"),
+            "node-package-manager.json",
+        ).expect("load configuration exported by the web preset builder");
+
+        assert_eq!(config.version, 1);
+        assert_eq!(config.groups[0].id, "development");
+        assert_eq!(config.apps.iter().map(|app| app.id.as_str()).collect::<Vec<_>>(), vec!["nodejs", "npm"]);
+        assert_eq!(config.apps[1].depends_on, vec!["nodejs"]);
+        assert_eq!(config.apps[1].install.get("ubuntu"), Some(&vec!["sudo apt-get install -y npm".to_string()]));
+        assert!(config.apps[0].install.contains_key("windows"));
+        assert!(config.apps[1].update.contains_key("arch"));
+        assert!(config.apps[1].uninstall.contains_key("fedora"));
+    }
+
+    #[test]
     fn load_config_rejects_app_without_name() {
         let path = write_temp_config(
             "missing-name.yaml",

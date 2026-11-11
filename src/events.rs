@@ -30,6 +30,7 @@ pub fn handle_key_event(state: &mut AppState, key: event::KeyEvent) -> bool {
         KeyCode::Char(' ') => state.toggle_selection(),
         KeyCode::Esc => state.clear_selection(),
         KeyCode::Tab => cycle_group(state),
+        KeyCode::BackTab => cycle_group_back(state),
         KeyCode::Char('i') => queue_action(state, Action::Install),
         KeyCode::Char('u') => queue_action(state, Action::Update),
         KeyCode::Char('d') => queue_action(state, Action::Uninstall),
@@ -51,6 +52,7 @@ pub fn handle_key_event(state: &mut AppState, key: event::KeyEvent) -> bool {
 
 fn cycle_group(state: &mut AppState) {
     let groups = state.config.groups.clone();
+    
     if groups.is_empty() {
         return;
     }
@@ -68,6 +70,28 @@ fn cycle_group(state: &mut AppState) {
     };
 
     let new_group = next.map(|i| groups[i].id.clone()).unwrap_or_default();
+    state.apply_group_filter(&new_group.clone());
+}
+
+fn cycle_group_back(state: &mut AppState) {
+    let groups = state.config.groups.clone();
+    if groups.is_empty() {
+        return;
+    }
+
+    let current_idx = if state.active_group.is_empty() {
+        None
+    } else {
+        groups.iter().position(|g| g.id == state.active_group)
+    };
+
+    let prev = match current_idx {
+        None => Some(groups.len() - 1),
+        Some(i) if i > 0 => Some(i - 1),
+        _ => None,
+    };
+
+    let new_group = prev.map(|i| groups[i].id.clone()).unwrap_or_default();
     state.apply_group_filter(&new_group.clone());
 }
 

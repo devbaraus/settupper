@@ -1,0 +1,51 @@
+id: firefox
+name: Firefox
+description: A browser for everyday browsing and web development.
+group: everyday
+check:
+  ubuntu:
+    - command -v firefox
+  fedora:
+    - command -v firefox
+  arch:
+    - command -v firefox
+  macos:
+    - brew list --cask firefox
+  windows:
+    - winget list --id Mozilla.Firefox -e
+actions:
+  install:
+    ubuntu:
+      - sudo apt-get install -y firefox
+    fedora:
+      - sudo dnf install -y firefox
+    arch:
+      - sudo pacman -S --needed --noconfirm firefox
+    macos:
+      - brew install --cask firefox
+    windows:
+      - winget install --id Mozilla.Firefox -e --accept-source-agreements
+        --accept-package-agreements
+  update:
+    ubuntu:
+      - sudo apt-get install --only-upgrade -y firefox
+    fedora:
+      - sudo dnf upgrade -y firefox
+    arch:
+      - sudo pacman -Syu --noconfirm firefox
+    macos:
+      - brew upgrade --cask firefox
+    windows:
+      - winget upgrade --id Mozilla.Firefox -e --accept-source-agreements
+        --accept-package-agreements
+  uninstall:
+    ubuntu:
+      - sudo apt-get remove -y firefox
+    fedora:
+      - sudo dnf remove -y firefox
+    arch:
+      - sudo pacman -R --noconfirm firefox
+    macos:
+      - brew uninstall --cask firefox
+    windows:
+      - winget uninstall --id Mozilla.Firefox -e

@@ -1,0 +1,51 @@
+id: git
+name: Git
+description: Distributed version control for your projects.
+group: development
+check:
+  ubuntu:
+    - command -v git
+  fedora:
+    - command -v git
+  arch:
+    - command -v git
+  macos:
+    - brew list --formula git
+  windows:
+    - winget list --id Git.Git -e
+actions:
+  install:
+    ubuntu:
+      - sudo apt-get install -y git
+    fedora:
+      - sudo dnf install -y git
+    arch:
+      - sudo pacman -S --needed --noconfirm git
+    macos:
+      - brew install git
+    windows:
+      - winget install --id Git.Git -e --accept-source-agreements
+        --accept-package-agreements
+  update:
+    ubuntu:
+      - sudo apt-get install --only-upgrade -y git
+    fedora:
+      - sudo dnf upgrade -y git
+    arch:
+      - sudo pacman -Syu --noconfirm git
+    macos:
+      - brew upgrade git
+    windows:
+      - winget upgrade --id Git.Git -e --accept-source-agreements
+        --accept-package-agreements
+  uninstall:
+    ubuntu:
+      - sudo apt-get remove -y git
+    fedora:
+      - sudo dnf remove -y git
+    arch:
+      - sudo pacman -R --noconfirm git
+    macos:
+      - brew uninstall git
+    windows:
+      - winget uninstall --id Git.Git -e

@@ -1,0 +1,35 @@
+id: npm
+name: npm
+description: Install and manage JavaScript packages. Includes Node.js as a dependency.
+group: development
+depends_on:
+  - nodejs
+check:
+  ubuntu:
+    - command -v npm
+  fedora:
+    - command -v npm
+  arch:
+    - command -v npm
+actions:
+  install:
+    ubuntu:
+      - sudo apt-get install -y npm
+    fedora:
+      - sudo dnf install -y npm
+    arch:
+      - sudo pacman -S --needed --noconfirm npm
+  update:
+    ubuntu:
+      - sudo apt-get install --only-upgrade -y npm
+    fedora:
+      - sudo dnf upgrade -y npm
+    arch:
+      - sudo pacman -Syu --noconfirm npm
+  uninstall:
+    ubuntu:
+      - sudo apt-get remove -y npm
+    fedora:
+      - sudo dnf remove -y npm
+    arch:
+      - sudo pacman -R --noconfirm npm

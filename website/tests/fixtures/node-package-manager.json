@@ -1,0 +1,142 @@
+{
+  "version": 1,
+  "groups": [
+    {
+      "id": "development",
+      "name": "Development"
+    }
+  ],
+  "apps": [
+    {
+      "id": "nodejs",
+      "name": "Node.js",
+      "description": "JavaScript runtime for scripts and server applications.",
+      "group": "development",
+      "check": {
+        "ubuntu": [
+          "command -v node"
+        ],
+        "fedora": [
+          "command -v node"
+        ],
+        "arch": [
+          "command -v node"
+        ],
+        "macos": [
+          "brew list --formula node"
+        ],
+        "windows": [
+          "winget list --id OpenJS.NodeJS.LTS -e"
+        ]
+      },
+      "actions": {
+        "install": {
+          "ubuntu": [
+            "sudo apt-get install -y nodejs"
+          ],
+          "fedora": [
+            "sudo dnf install -y nodejs"
+          ],
+          "arch": [
+            "sudo pacman -S --needed --noconfirm nodejs"
+          ],
+          "macos": [
+            "brew install node"
+          ],
+          "windows": [
+            "winget install --id OpenJS.NodeJS.LTS -e --accept-source-agreements --accept-package-agreements"
+          ]
+        },
+        "update": {
+          "ubuntu": [
+            "sudo apt-get install --only-upgrade -y nodejs"
+          ],
+          "fedora": [
+            "sudo dnf upgrade -y nodejs"
+          ],
+          "arch": [
+            "sudo pacman -Syu --noconfirm nodejs"
+          ],
+          "macos": [
+            "brew upgrade node"
+          ],
+          "windows": [
+            "winget upgrade --id OpenJS.NodeJS.LTS -e --accept-source-agreements --accept-package-agreements"
+          ]
+        },
+        "uninstall": {
+          "ubuntu": [
+            "sudo apt-get remove -y nodejs"
+          ],
+          "fedora": [
+            "sudo dnf remove -y nodejs"
+          ],
+          "arch": [
+            "sudo pacman -R --noconfirm nodejs"
+          ],
+          "macos": [
+            "brew uninstall node"
+          ],
+          "windows": [
+            "winget uninstall --id OpenJS.NodeJS.LTS -e"
+          ]
+        }
+      }
+    },
+    {
+      "id": "npm",
+      "name": "npm",
+      "description": "Install and manage JavaScript packages. Includes Node.js as a dependency.",
+      "group": "development",
+      "depends_on": [
+        "nodejs"
+      ],
+      "check": {
+        "ubuntu": [
+          "command -v npm"
+        ],
+        "fedora": [
+          "command -v npm"
+        ],
+        "arch": [
+          "command -v npm"
+        ]
+      },
+      "actions": {
+        "install": {
+          "ubuntu": [
+            "sudo apt-get install -y npm"
+          ],
+          "fedora": [
+            "sudo dnf install -y npm"
+          ],
+          "arch": [
+            "sudo pacman -S --needed --noconfirm npm"
+          ]
+        },
+        "update": {
+          "ubuntu": [
+            "sudo apt-get install --only-upgrade -y npm"
+          ],
+          "fedora": [
+            "sudo dnf upgrade -y npm"
+          ],
+          "arch": [
+            "sudo pacman -Syu --noconfirm npm"
+          ]
+        },
+        "uninstall": {
+          "ubuntu": [
+            "sudo apt-get remove -y npm"
+          ],
+          "fedora": [
+            "sudo dnf remove -y npm"
+          ],
+          "arch": [
+            "sudo pacman -R --noconfirm npm"
+          ]
+        }
+      }
+    }
+  ]
+}

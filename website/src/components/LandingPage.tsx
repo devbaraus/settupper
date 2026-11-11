@@ -113,6 +113,7 @@ export default function LandingPage() {
         >
           <a href="#features">Features</a>
           <a href="#install">Install</a>
+          <a href="/presets">Presets</a>
           <a href="#usage">How it works</a>
         </nav>
         <a

@@ -1,0 +1,41 @@
+id: python
+name: Python
+description: Programming language for automation, scripting, and data tools.
+group: development
+check:
+  ubuntu:
+    - command -v python3
+  fedora:
+    - command -v python3
+  arch:
+    - command -v python3
+  macos:
+    - brew list --formula python
+actions:
+  install:
+    ubuntu:
+      - sudo apt-get install -y python3
+    fedora:
+      - sudo dnf install -y python3
+    arch:
+      - sudo pacman -S --needed --noconfirm python
+    macos:
+      - brew install python
+  update:
+    ubuntu:
+      - sudo apt-get install --only-upgrade -y python3
+    fedora:
+      - sudo dnf upgrade -y python3
+    arch:
+      - sudo pacman -Syu --noconfirm python
+    macos:
+      - brew upgrade python
+  uninstall:
+    ubuntu:
+      - sudo apt-get remove -y python3
+    fedora:
+      - sudo dnf remove -y python3
+    arch:
+      - sudo pacman -R --noconfirm python
+    macos:
+      - brew uninstall python

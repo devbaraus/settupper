@@ -1,0 +1,26 @@
+---
+import PresetBuilder from "../components/PresetBuilder";
+import { loadCatalog } from "../lib/catalog";
+import "../styles/global.css";
+const files = import.meta.glob<string>("../../../presets/*.{yaml,yml}", { eager: true, query: "?raw", import: "default" });
+const catalog = loadCatalog(files);
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Search applications, customize a starter collection, and download a Settupper preset for your next setup." />
+    <meta name="theme-color" content="#f6f4ee" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;450;500;550;600;650;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <title>Preset Builder — Settupper</title>
+  </head>
+  <body class="bg-paper font-sans text-ink antialiased">
+    <noscript><p class="mx-auto max-w-xl p-6">Enable JavaScript to search, select, and download application presets. You can also <a href="/packages-example.yaml" class="underline">download an example configuration</a>.</p></noscript>
+    <PresetBuilder catalog={catalog} client:load />
+  </body>
+</html>

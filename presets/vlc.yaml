@@ -1,0 +1,43 @@
+id: vlc
+name: VLC
+description: Play video, music, and other media files.
+group: everyday
+check:
+  ubuntu:
+    - command -v vlc
+  arch:
+    - command -v vlc
+  macos:
+    - brew list --cask vlc
+  windows:
+    - winget list --id VideoLAN.VLC -e
+actions:
+  install:
+    ubuntu:
+      - sudo apt-get install -y vlc
+    arch:
+      - sudo pacman -S --needed --noconfirm vlc
+    macos:
+      - brew install --cask vlc
+    windows:
+      - winget install --id VideoLAN.VLC -e --accept-source-agreements
+        --accept-package-agreements
+  update:
+    ubuntu:
+      - sudo apt-get install --only-upgrade -y vlc
+    arch:
+      - sudo pacman -Syu --noconfirm vlc
+    macos:
+      - brew upgrade --cask vlc
+    windows:
+      - winget upgrade --id VideoLAN.VLC -e --accept-source-agreements
+        --accept-package-agreements
+  uninstall:
+    ubuntu:
+      - sudo apt-get remove -y vlc
+    arch:
+      - sudo pacman -R --noconfirm vlc
+    macos:
+      - brew uninstall --cask vlc
+    windows:
+      - winget uninstall --id VideoLAN.VLC -e

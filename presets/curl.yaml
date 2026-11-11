@@ -1,0 +1,51 @@
+id: curl
+name: curl
+description: Transfer data and work with URLs from the command line.
+group: terminal
+check:
+  ubuntu:
+    - command -v curl
+  fedora:
+    - command -v curl
+  arch:
+    - command -v curl
+  macos:
+    - brew list --formula curl
+  windows:
+    - winget list --id cURL.cURL -e
+actions:
+  install:
+    ubuntu:
+      - sudo apt-get install -y curl
+    fedora:
+      - sudo dnf install -y curl
+    arch:
+      - sudo pacman -S --needed --noconfirm curl
+    macos:
+      - brew install curl
+    windows:
+      - winget install --id cURL.cURL -e --accept-source-agreements
+        --accept-package-agreements
+  update:
+    ubuntu:
+      - sudo apt-get install --only-upgrade -y curl
+    fedora:
+      - sudo dnf upgrade -y curl
+    arch:
+      - sudo pacman -Syu --noconfirm curl
+    macos:
+      - brew upgrade curl
+    windows:
+      - winget upgrade --id cURL.cURL -e --accept-source-agreements
+        --accept-package-agreements
+  uninstall:
+    ubuntu:
+      - sudo apt-get remove -y curl
+    fedora:
+      - sudo dnf remove -y curl
+    arch:
+      - sudo pacman -R --noconfirm curl
+    macos:
+      - brew uninstall curl
+    windows:
+      - winget uninstall --id cURL.cURL -e
